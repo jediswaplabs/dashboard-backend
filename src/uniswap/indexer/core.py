@@ -9,6 +9,13 @@ from structlog import get_logger
 from uniswap.indexer.abi import (burn_decoder, decode_event, mint_decoder,
                                  swap_decoder, sync_decoder, transfer_decoder)
 from uniswap.indexer.context import IndexerContext
+from uniswap.indexer.daily import (snapshot_exchange_day_data,
+                                   snapshot_pair_day_data,
+                                   snapshot_pair_hour_data,
+                                   snapshot_token_day_data,
+                                   update_exchange_day_data,
+                                   update_pair_day_data, update_pair_hour_data,
+                                   update_token_day_data)
 from uniswap.indexer.helpers import (create_liquidity_snapshot, create_token,
                                      create_transaction, felt,
                                      fetch_token_balance, price,
@@ -366,6 +373,25 @@ async def handle_mint(
     # update lp position
     await create_liquidity_snapshot(info, pair_address, mint["to"])
 
+    # update daily stats
+    await snapshot_pair_day_data(info, pair_address)
+    await update_pair_day_data(info, pair_address, {"$inc": {"transaction_count": 1}})
+
+    await snapshot_pair_hour_data(info, pair_address)
+    await update_pair_hour_data(info, pair_address, {"$inc": {"transaction_count": 1}})
+
+    await snapshot_exchange_day_data(info, jediswap_factory)
+
+    await snapshot_token_day_data(info, pair["token0_id"])
+    await update_token_day_data(
+        info, pair["token0_id"], {"$inc": {"transaction_count": 1}}
+    )
+
+    await snapshot_token_day_data(info, pair["token1_id"])
+    await update_token_day_data(
+        info, pair["token1_id"], {"$inc": {"transaction_count": 1}}
+    )
+
 
 async def handle_burn(info: Info, header: BlockHeader, event: StarkNetEvent):
     burn = decode_event(burn_decoder, event.data)
@@ -436,6 +462,25 @@ async def handle_burn(info: Info, header: BlockHeader, event: StarkNetEvent):
     # update lp position
     await create_liquidity_snapshot(info, pair_address, burn["sender"])
 
+    # update daily stats
+    await snapshot_pair_day_data(info, pair_address)
+    await update_pair_day_data(info, pair_address, {"$inc": {"transaction_count": 1}})
+
+    await snapshot_pair_hour_data(info, pair_address)
+    await update_pair_hour_data(info, pair_address, {"$inc": {"transaction_count": 1}})
+
+    await snapshot_exchange_day_data(info, jediswap_factory)
+
+    await snapshot_token_day_data(info, pair["token0_id"])
+    await update_token_day_data(
+        info, pair["token0_id"], {"$inc": {"transaction_count": 1}}
+    )
+
+    await snapshot_token_day_data(info, pair["token1_id"])
+    await update_token_day_data(
+        info, pair["token1_id"], {"$inc": {"transaction_count": 1}}
+    )
+
 
 async def handle_swap(
     info: Info[IndexerContext], header: BlockHeader, event: StarkNetEvent
@@ -474,6 +519,11 @@ async def handle_swap(
     tracked_amount_eth = Decimal("0")
     if info.context.eth_price != Decimal("0"):
         tracked_amount_eth = tracked_amount_usd / info.context.eth_price
+
+    amount0_total_eth = amount0_total * token0["derived_eth"].to_decimal()
+    amount0_total_usd = amount0_total_eth * info.context.eth_price
+    amount1_total_eth = amount1_total * token1["derived_eth"].to_decimal()
+    amount1_total_usd = amount1_total_eth * info.context.eth_price
 
     # update tokens data
     await info.storage.find_one_and_update(
@@ -548,6 +598,76 @@ async def handle_swap(
             "to": felt(swap.to),
             "from": felt(swap.sender),  # TODO: should be tx sender
             "amount_usd": Decimal128(max(tracked_amount_usd, derive_amount_usd)),
+        },
+    )
+
+    # update daily stats
+    await snapshot_exchange_day_data(info, jediswap_factory)
+    await update_exchange_day_data(
+        info,
+        jediswap_factory,
+        {
+            "$inc": {
+                "daily_volume_usd": Decimal128(tracked_amount_usd),
+                "daily_volume_eth": Decimal128(tracked_amount_eth),
+                "daily_volume_untracked": Decimal128(derive_amount_usd),
+            }
+        },
+    )
+
+    await snapshot_pair_day_data(info, pair_address)
+    await update_pair_day_data(
+        info,
+        pair_address,
+        {
+            "$inc": {
+                "transaction_count": 1,
+                "daily_volume_token0": Decimal128(amount0_total),
+                "daily_volume_token1": Decimal128(amount1_total),
+                "daily_volume_usd": Decimal128(tracked_amount_usd),
+            }
+        },
+    )
+
+    await snapshot_pair_hour_data(info, pair_address)
+    await update_pair_hour_data(
+        info,
+        pair_address,
+        {
+            "$inc": {
+                "transaction_count": 1,
+                "hourly_volume_token0": Decimal128(amount0_total),
+                "hourly_volume_token1": Decimal128(amount1_total),
+                "hourly_volume_usd": Decimal128(tracked_amount_usd),
+            }
+        },
+    )
+
+    await snapshot_token_day_data(info, pair["token0_id"])
+    await update_token_day_data(
+        info,
+        pair["token0_id"],
+        {
+            "$inc": {
+                "transaction_count": 1,
+                "daily_volume_token": Decimal128(amount0_total),
+                "daily_volume_eth": Decimal128(amount0_total_eth),
+                "daily_volume_usd": Decimal128(amount0_total_usd),
+            }
+        },
+    )
+
+    await snapshot_token_day_data(info, pair["token1_id"])
+    await update_token_day_data(
+        info,
+        pair["token1_id"],
+        {
+            "$inc": {
+                "transaction_count": 1,
+                "daily_volume_token": Decimal128(amount1_total),
+                "daily_volume_eth": Decimal128(amount1_total_eth),
+                "daily_volume_usd": Decimal128(amount1_total_usd),
+            }
         },
     )
 
