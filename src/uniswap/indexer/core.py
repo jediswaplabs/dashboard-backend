@@ -1,33 +1,21 @@
 from decimal import Decimal
+
 from apibara import EventFilter, Info
 from apibara.model import BlockHeader, StarkNetEvent
 from bson import Decimal128
+from more_itertools import pairwise
 from structlog import get_logger
 
-from uniswap.indexer.abi import (
-    decode_event,
-    sync_decoder,
-    swap_decoder,
-    transfer_decoder,
-    mint_decoder,
-    burn_decoder,
-)
+from uniswap.indexer.abi import (burn_decoder, decode_event, mint_decoder,
+                                 swap_decoder, sync_decoder, transfer_decoder)
 from uniswap.indexer.context import IndexerContext
-from uniswap.indexer.helpers import (
-    create_liquidity_position,
-    create_token,
-    create_transaction,
-    felt,
-    fetch_token_balance,
-    price,
-    to_decimal,
-)
-from uniswap.indexer.jediswap import (
-    find_eth_per_token,
-    get_tracked_liquidity_usd,
-    jediswap_factory,
-)
-
+from uniswap.indexer.helpers import (create_liquidity_position, create_token,
+                                     create_transaction, felt,
+                                     fetch_token_balance, price, to_decimal,
+                                     update_transaction_count)
+from uniswap.indexer.jediswap import (find_eth_per_token,
+                                      get_tracked_liquidity_usd,
+                                      get_tracked_volume_usd, jediswap_factory)
 
 logger = get_logger(__name__)
 
@@ -310,7 +298,9 @@ async def handle_sync(
 
     factory = await info.storage.find_one("factories", {"id": felt(jediswap_factory)})
 
-    total_liquidity_eth = factory["total_liquidity_eth"].to_decimal() + tracked_liquidity_eth
+    total_liquidity_eth = (
+        factory["total_liquidity_eth"].to_decimal() + tracked_liquidity_eth
+    )
     total_liquidity_usd = total_liquidity_eth * info.context.eth_price
 
     await info.storage.find_one_and_update(
@@ -325,19 +315,250 @@ async def handle_sync(
     )
 
 
-async def handle_mint(info: Info, header: BlockHeader, event: StarkNetEvent):
+async def handle_mint(
+    info: Info[IndexerContext], header: BlockHeader, event: StarkNetEvent
+):
     mint = decode_event(mint_decoder, event.data)
+    pair_address = int.from_bytes(event.address, "big")
     logger.info("handle Mint", **mint._asdict())
 
+    transaction = await info.storage.find_one(
+        "transactions", {"hash": event.transaction_hash}
+    )
+    assert transaction is not None
 
-async def handle_swap(info: Info, header: BlockHeader, event: StarkNetEvent):
-    swap = decode_event(swap_decoder, event.data)
-    logger.info("handle Swap", **swap._asdict())
+    mints = await info.storage.find(
+        "mints",
+        {
+            "pair_id": felt(pair_address),
+            "transaction_hash": event.transaction_hash,
+        },
+        sort={"index": 1},
+    )
+    mints = list(mints)
+    assert mints
+
+    pair = await info.storage.find_one("pairs", {"id": felt(pair_address)})
+    assert pair is not None
+
+    token0 = await info.storage.find_one("tokens", {"id": pair["token0_id"]})
+    assert token0 is not None
+
+    token1 = await info.storage.find_one("tokens", {"id": pair["token1_id"]})
+    assert token1 is not None
+
+    await update_transaction_count(info, jediswap_factory, pair_address, token0, token1)
+
+    token0_amount = to_decimal(mint.amount0, token0["decimals"])
+    token1_amount = to_decimal(mint.amount1, token1["decimals"])
+
+    # get new amounts of usd and eth for tracking
+    amount_total_eth = (
+        token1["derived_eth"].to_decimal() * token1_amount
+        + token0["derived_eth"].to_decimal() * token0_amount
+    )
+    amount_total_usd = amount_total_eth * info.context.eth_price
+
+    # update latest mint
+    await info.storage.find_one_and_update(
+        "mints",
+        {
+            "pair_id": felt(pair_address),
+            "transaction_hash": event.transaction_hash,
+            "index": len(mints) - 1,
+        },
+        {
+            "$set": {
+                "sender": felt(mint.sender),
+                "amount0": Decimal128(token0_amount),
+                "amount1": Decimal128(token1_amount),
+                "log_index": event.log_index,
+                "amount_usd": Decimal128(amount_total_usd),
+            }
+        },
+    )
 
 
 async def handle_burn(info: Info, header: BlockHeader, event: StarkNetEvent):
     burn = decode_event(burn_decoder, event.data)
+    pair_address = int.from_bytes(event.address, "big")
     logger.info("handle Burn", **burn._asdict())
+
+    transaction = await info.storage.find_one(
+        "transactions", {"hash": event.transaction_hash}
+    )
+    if transaction is None:
+        return
+
+    burns = await info.storage.find(
+        "burns",
+        {
+            "pair_id": felt(pair_address),
+            "transaction_hash": event.transaction_hash,
+        },
+        sort={"index": 1},
+    )
+    burns = list(burns)
+    assert burns
+
+    pair = await info.storage.find_one("pairs", {"id": felt(pair_address)})
+    assert pair is not None
+
+    token0 = await info.storage.find_one("tokens", {"id": pair["token0_id"]})
+    assert token0 is not None
+
+    token1 = await info.storage.find_one("tokens", {"id": pair["token1_id"]})
+    assert token1 is not None
+
+    await info.storage.find_one_and_update(
+        "factories", {"id": felt(jediswap_factory)}, {"$inc": {"transaction_count": 1}}
+    )
+
+    await update_transaction_count(info, jediswap_factory, pair_address, token0, token1)
+
+    token0_amount = to_decimal(burn.amount0, token0["decimals"])
+    token1_amount = to_decimal(burn.amount1, token1["decimals"])
+
+    # get new amounts of usd and eth for tracking
+    amount_total_eth = (
+        token1["derived_eth"].to_decimal() * token1_amount
+        + token0["derived_eth"].to_decimal() * token0_amount
+    )
+    amount_total_usd = amount_total_eth * info.context.eth_price
+
+    # update burn
+    await info.storage.find_one_and_update(
+        "burns",
+        {
+            "pair_id": felt(pair_address),
+            "transaction_hash": event.transaction_hash,
+            "index": len(burns) - 1,
+        },
+        {
+            "$set": {
+                # "to": felt(burn.to),
+                "amount0": Decimal128(token0_amount),
+                "amount1": Decimal128(token1_amount),
+                "log_index": event.log_index,
+                "amount_usd": Decimal128(amount_total_usd),
+            }
+        },
+    )
+
+
+async def handle_swap(
+    info: Info[IndexerContext], header: BlockHeader, event: StarkNetEvent
+):
+    swap = decode_event(swap_decoder, event.data)
+    pair_address = int.from_bytes(event.address, "big")
+    logger.info("handle Swap", **swap._asdict())
+
+    pair = await info.storage.find_one("pairs", {"id": felt(pair_address)})
+    assert pair is not None
+
+    token0 = await info.storage.find_one("tokens", {"id": pair["token0_id"]})
+    assert token0 is not None
+
+    token1 = await info.storage.find_one("tokens", {"id": pair["token1_id"]})
+    assert token1 is not None
+
+    amount0_in = to_decimal(swap.amount0_in, token0["decimals"])
+    amount1_in = to_decimal(swap.amount1_in, token1["decimals"])
+    amount0_out = to_decimal(swap.amount0_out, token0["decimals"])
+    amount1_out = to_decimal(swap.amount1_out, token1["decimals"])
+
+    # total for volume updates
+    amount0_total = amount0_in + amount0_out
+    amount1_total = amount1_in + amount1_out
+
+    derived_amount_eth = (
+        token1["derived_eth"].to_decimal() * amount1_total
+        + token0["derived_eth"].to_decimal() * amount0_total
+    ) / Decimal("2")
+    derive_amount_usd = derived_amount_eth * info.context.eth_price
+
+    tracked_amount_usd = await get_tracked_volume_usd(
+        info, token0, amount0_total, token1, amount1_total, pair
+    )
+    tracked_amount_eth = Decimal("0")
+    if info.context.eth_price != Decimal("0"):
+        tracked_amount_eth = tracked_amount_usd / info.context.eth_price
+
+    # update tokens data
+    await info.storage.find_one_and_update(
+        "tokens",
+        {"id": pair["token0_id"]},
+        {
+            "$inc": {
+                "trade_volume": Decimal128(amount0_total),
+                "trade_volume_usd": Decimal128(tracked_amount_usd),
+                "untracked_volume_usd": Decimal128(derive_amount_usd),
+                "transaction_count": 1,
+            }
+        },
+    )
+
+    await info.storage.find_one_and_update(
+        "tokens",
+        {"id": pair["token1_id"]},
+        {
+            "$inc": {
+                "trade_volume": Decimal128(amount1_total),
+                "trade_volume_usd": Decimal128(tracked_amount_usd),
+                "untracked_volume_usd": Decimal128(derive_amount_usd),
+                "transaction_count": 1,
+            }
+        },
+    )
+
+    # update pair
+    await info.storage.find_one_and_update(
+        "pairs",
+        {"id": felt(pair_address)},
+        {
+            "$inc": {
+                "volume_usd": Decimal128(tracked_amount_usd),
+                "volume_token0": Decimal128(amount0_total),
+                "volume_token1": Decimal128(amount1_total),
+                "untracked_volume_usd": Decimal128(derived_amount_eth),
+                "transaction_count": 1,
+            }
+        },
+    )
+
+    # update factory
+    await info.storage.find_one_and_update(
+        "factories",
+        {"id": felt(jediswap_factory)},
+        {
+            "$inc": {
+                "total_volume_usd": Decimal128(tracked_amount_usd),
+                "total_volume_eth": Decimal128(tracked_amount_eth),
+                "untracked_volume_usd": Decimal128(derive_amount_usd),
+                "transaction_count": 1,
+            }
+        },
+    )
+
+    await create_transaction(info, event.transaction_hash)
+
+    await info.storage.insert_one(
+        "swaps",
+        {
+            "transaction_hash": event.transaction_hash,
+            "log_index": event.log_index,
+            "pair_id": pair["id"],
+            "timestamp": info.context.block_timestamp,
+            "amount0_in": Decimal128(amount0_in),
+            "amount1_in": Decimal128(amount1_in),
+            "amount0_out": Decimal128(amount0_out),
+            "amount1_out": Decimal128(amount1_out),
+            "sender": felt(swap.sender),
+            "to": felt(swap.to),
+            "from": felt(swap.sender),  # TODO: should be tx sender
+            "amount_usd": Decimal128(max(tracked_amount_usd, derive_amount_usd)),
+        },
+    )
 
 
 def _is_complete_mint(mint):

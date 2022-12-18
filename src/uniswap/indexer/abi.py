@@ -1,6 +1,7 @@
 from typing import List
 
-from starknet_py.contract import FunctionCallSerializer, identifier_manager_from_abi
+from starknet_py.contract import (FunctionCallSerializer,
+                                  identifier_manager_from_abi)
 
 uint256_abi = {
     "name": "Uint256",
@@ -40,10 +41,10 @@ swap_abi = {
     "keys": [],
     "outputs": [
         {"name": "sender", "type": "felt"},
-        {"name": "amount0In", "type": "Uint256"},
-        {"name": "amount1In", "type": "Uint256"},
-        {"name": "amount0Out", "type": "Uint256"},
-        {"name": "amount1Out", "type": "Uint256"},
+        {"name": "amount0_in", "type": "Uint256"},
+        {"name": "amount1_in", "type": "Uint256"},
+        {"name": "amount0_out", "type": "Uint256"},
+        {"name": "amount1_out", "type": "Uint256"},
         {"name": "to", "type": "felt"},
     ],
 }

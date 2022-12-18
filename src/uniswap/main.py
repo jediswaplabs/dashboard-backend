@@ -6,7 +6,6 @@ from structlog import get_logger
 
 from uniswap.indexer import run_indexer
 
-
 logger = get_logger(__name__)
 
 

@@ -102,6 +102,26 @@ async def create_liquidity_position(
     return position
 
 
+async def update_transaction_count(
+    info: Info[IndexerContext], factory: int, pair: int, token0, token1
+):
+    await info.storage.find_one_and_update(
+        "factories", {"id": felt(factory)}, {"$inc": {"transaction_count": 1}}
+    )
+
+    await info.storage.find_one_and_update(
+        "tokens", {"id": token0["id"]}, {"$inc": {"transaction_count": 1}}
+    )
+
+    await info.storage.find_one_and_update(
+        "tokens", {"id": token1["id"]}, {"$inc": {"transaction_count": 1}}
+    )
+
+    await info.storage.find_one_and_update(
+        "pairs", {"id": felt(pair)}, {"$inc": {"transaction_count": 1}}
+    )
+
+
 async def fetch_token_balance(
     info: Info[IndexerContext], token_address: int, user: int
 ):

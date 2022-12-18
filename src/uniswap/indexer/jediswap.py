@@ -1,5 +1,6 @@
 from decimal import Decimal
 from typing import Union
+
 from apibara import Info
 
 from uniswap.indexer.context import IndexerContext
@@ -108,3 +109,13 @@ async def get_tracked_liquidity_usd(
 
     # non-whitelisted asset
     return Decimal("0")
+
+
+async def get_tracked_volume_usd(
+    info: Info[IndexerContext], token0, token0_amount, token1, token1_amount, pair
+):
+    price0 = token0["derived_eth"].to_decimal() * info.context.eth_price
+    price1 = token1["derived_eth"].to_decimal() * info.context.eth_price
+
+    # return average price
+    return (token0_amount * price0 + token1_amount * price1) / Decimal("2")

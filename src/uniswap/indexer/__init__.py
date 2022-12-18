@@ -1,5 +1,6 @@
 from datetime import datetime
 from decimal import Decimal
+
 from apibara import EventFilter, Info, NewEvents
 from apibara.indexer.runner import IndexerRunner, IndexerRunnerConfiguration
 from starknet_py.net.full_node_client import FullNodeClient
@@ -7,14 +8,9 @@ from starknet_py.net.models import StarknetChainId
 from structlog import get_logger
 
 from uniswap.indexer.context import IndexerContext
+from uniswap.indexer.core import (handle_burn, handle_mint, handle_swap,
+                                  handle_sync, handle_transfer)
 from uniswap.indexer.factory import handle_pair_created
-from uniswap.indexer.core import (
-    handle_burn,
-    handle_mint,
-    handle_swap,
-    handle_sync,
-    handle_transfer,
-)
 from uniswap.indexer.jediswap import get_eth_price
 
 indexer_id = "jediswap-testnet"

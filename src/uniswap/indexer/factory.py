@@ -1,4 +1,5 @@
 from decimal import Decimal
+
 from apibara import EventFilter, Info
 from apibara.model import BlockHeader, StarkNetEvent
 from bson import Decimal128
@@ -6,7 +7,6 @@ from structlog import get_logger
 
 from uniswap.indexer.abi import decode_event, pair_created_decoder
 from uniswap.indexer.helpers import create_token, felt
-
 
 logger = get_logger(__name__)
 
