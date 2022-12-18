@@ -73,3 +73,13 @@ async def get_pairs(
     cursor = db["pairs"].find(query, skip=skip, limit=first)
 
     return [Pair.from_mongo(d) for d in cursor]
+
+
+def get_pair(info: Info, id: bytes) -> Pair:
+    db: Database = info.context["db"]
+
+    query = {"id": id}
+    add_block_constraint(query, None)
+
+    pair = db["pairs"].find_one(query)
+    return Pair.from_mongo(pair)
