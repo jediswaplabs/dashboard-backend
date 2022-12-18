@@ -5,8 +5,12 @@ import click
 from structlog import get_logger
 
 from uniswap.indexer import run_indexer
+from uniswap.server import run_graphql_server
 
 logger = get_logger(__name__)
+
+
+indexer_id = "jediswap-testnet"
 
 
 def async_command(f):
@@ -36,7 +40,7 @@ async def indexer(stream_url, mongo_url, rpc_url, restart):
         rpc_url=rpc_url,
         restart=restart,
     )
-    await run_indexer(stream_url, mongo_url, rpc_url, restart)
+    await run_indexer(stream_url, mongo_url, rpc_url, indexer_id, restart)
 
 
 @cli.command()
@@ -44,3 +48,4 @@ async def indexer(stream_url, mongo_url, rpc_url, restart):
 @async_command
 async def server(mongo_url):
     logger.info("starting server")
+    await run_graphql_server(mongo_url, indexer_id)

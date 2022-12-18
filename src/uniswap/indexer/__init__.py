@@ -13,7 +13,6 @@ from uniswap.indexer.core import (handle_burn, handle_mint, handle_swap,
 from uniswap.indexer.factory import handle_pair_created
 from uniswap.indexer.jediswap import get_eth_price
 
-indexer_id = "jediswap-testnet"
 factory_address = "0x00dad44c139a476c7a17fc8141e6db680e9abc9f56fe249a105094c44382c2fd"
 
 
@@ -52,7 +51,7 @@ async def handle_events(info: Info[IndexerContext], block_events: NewEvents):
             logger.warn(f"Unhandled event {event.name}")
 
 
-async def run_indexer(stream_url, mongodb_url, rpc_url, restart):
+async def run_indexer(stream_url, mongodb_url, rpc_url, indexer_id, restart):
     runner = IndexerRunner(
         config=IndexerRunnerConfiguration(
             apibara_url=stream_url,
