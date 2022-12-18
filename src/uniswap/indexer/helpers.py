@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import List
+from typing import List, Union
 
 from apibara import Info
 from bson import Decimal128
@@ -78,28 +78,60 @@ async def create_transaction(info: Info[IndexerContext], transaction_hash: bytes
     return transaction
 
 
-async def create_liquidity_position(
-    info: Info[IndexerContext], pair_address: int, user: int
+async def replace_liquidity_position(
+    info: Info[IndexerContext], pair_address: int, user: int, balance: Decimal
 ):
-    position = await info.storage.find_one(
+    await info.storage.find_one_and_replace(
         "liquidity_positions",
         {
             "pair_address": felt(pair_address),
             "user": felt(user),
         },
+        {
+            "pair_address": felt(pair_address),
+            "user": felt(user),
+            "liquidity_token_balance": Decimal128(balance),
+        },
+        upsert=True,
     )
 
-    if position is not None:
-        return position
 
-    position = {
-        "pair_address": felt(pair_address),
-        "user": felt(user),
-        "liquidity_token_balance": Decimal128("0"),
-    }
+async def create_liquidity_snapshot(
+    info: Info[IndexerContext], pair_address: int, user: Union[int, bytes]
+):
+    if isinstance(user, int):
+        user = felt(user)
 
-    await info.storage.insert_one("liquidity_positions", position)
-    return position
+    pair = await info.storage.find_one("pairs", {"id": felt(pair_address)})
+    assert pair is not None
+    token0 = await info.storage.find_one("tokens", {"id": pair["token0_id"]})
+    assert token0 is not None
+    token1 = await info.storage.find_one("tokens", {"id": pair["token1_id"]})
+    assert token1 is not None
+    position = await info.storage.find_one(
+        "liquidity_positions", {"pair_address": felt(pair_address), "user": user}
+    )
+    assert position is not None
+
+    token0_price_usd = token0["derived_eth"].to_decimal() * info.context.eth_price
+    token1_price_usd = token1["derived_eth"].to_decimal() * info.context.eth_price
+
+    await info.storage.insert_one(
+        "liquidity_position_snapshots",
+        {
+            "pair_address": felt(pair_address),
+            "user": user,
+            "timestamp": info.context.block_timestamp,
+            "block": info.context.block_number,
+            "token0_price_usd": Decimal128(token0_price_usd),
+            "token1_price_usd": Decimal128(token1_price_usd),
+            "reserve0": pair["reserve0"],
+            "reserve1": pair["reserve1"],
+            "reserve_usd": pair["reserve_usd"],
+            "liquidity_token_total_supply": pair["total_supply"],
+            "liquidity_token_balance": position["liquidity_token_balance"],
+        },
+    )
 
 
 async def update_transaction_count(

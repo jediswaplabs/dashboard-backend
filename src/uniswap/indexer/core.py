@@ -9,9 +9,10 @@ from structlog import get_logger
 from uniswap.indexer.abi import (burn_decoder, decode_event, mint_decoder,
                                  swap_decoder, sync_decoder, transfer_decoder)
 from uniswap.indexer.context import IndexerContext
-from uniswap.indexer.helpers import (create_liquidity_position, create_token,
+from uniswap.indexer.helpers import (create_liquidity_snapshot, create_token,
                                      create_transaction, felt,
-                                     fetch_token_balance, price, to_decimal,
+                                     fetch_token_balance, price,
+                                     replace_liquidity_position, to_decimal,
                                      update_transaction_count)
 from uniswap.indexer.jediswap import (find_eth_per_token,
                                       get_tracked_liquidity_usd,
@@ -158,37 +159,19 @@ async def handle_transfer(
         )
         from_user_balance = to_decimal(from_user_balance, 18)
         logger.debug("from user balance", balance=from_user_balance)
-        await info.storage.find_one_and_replace(
-            "liquidity_positions",
-            {
-                "pair_address": felt(pair_address),
-                "user": felt(transfer.from_),
-            },
-            {
-                "pair_address": felt(pair_address),
-                "user": felt(transfer.from_),
-                "liquidity_token_balance": Decimal128(from_user_balance),
-            },
-            upsert=True,
+        await replace_liquidity_position(
+            info, pair_address, transfer.from_, from_user_balance
         )
+        await create_liquidity_snapshot(info, pair_address, transfer.from_)
 
     if transfer.to != 0 and transfer.to != pair_address:
         to_user_balance = await fetch_token_balance(info, pair_address, transfer.to)
         to_user_balance = to_decimal(to_user_balance, 18)
         logger.debug("to user balance", balance=to_user_balance)
-        await info.storage.find_one_and_replace(
-            "liquidity_positions",
-            {
-                "pair_address": felt(pair_address),
-                "user": felt(transfer.to),
-            },
-            {
-                "pair_address": felt(pair_address),
-                "user": felt(transfer.to),
-                "liquidity_token_balance": Decimal128(to_user_balance),
-            },
-            upsert=True,
+        await replace_liquidity_position(
+            info, pair_address, transfer.to, to_user_balance
         )
+        await create_liquidity_snapshot(info, pair_address, transfer.to)
 
 
 async def handle_sync(
@@ -362,7 +345,7 @@ async def handle_mint(
     amount_total_usd = amount_total_eth * info.context.eth_price
 
     # update latest mint
-    await info.storage.find_one_and_update(
+    mint = await info.storage.find_one_and_update(
         "mints",
         {
             "pair_id": felt(pair_address),
@@ -379,6 +362,9 @@ async def handle_mint(
             }
         },
     )
+
+    # update lp position
+    await create_liquidity_snapshot(info, pair_address, mint["to"])
 
 
 async def handle_burn(info: Info, header: BlockHeader, event: StarkNetEvent):
@@ -429,7 +415,7 @@ async def handle_burn(info: Info, header: BlockHeader, event: StarkNetEvent):
     amount_total_usd = amount_total_eth * info.context.eth_price
 
     # update burn
-    await info.storage.find_one_and_update(
+    burn = await info.storage.find_one_and_update(
         "burns",
         {
             "pair_id": felt(pair_address),
@@ -446,6 +432,9 @@ async def handle_burn(info: Info, header: BlockHeader, event: StarkNetEvent):
             }
         },
     )
+
+    # update lp position
+    await create_liquidity_snapshot(info, pair_address, burn["sender"])
 
 
 async def handle_swap(
