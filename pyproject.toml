@@ -16,6 +16,7 @@ pymongo = {extras = ["srv"], version = "^4.1.1"}
 structlog = "^22.3.0"
 strawberry-graphql = {extras = ["debug-server"], version = "^0.151.0"}
 aiohttp = "^3.8.3"
+aiohttp_cors = "^0.7.0"
 
 [tool.poetry.dev-dependencies]
 black = "^22.6.0"

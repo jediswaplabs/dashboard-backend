@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime
 from typing import List, NewType, Optional
 
+import aiohttp_cors
 import strawberry
 from aiohttp import web
 from pymongo import MongoClient
@@ -28,7 +29,17 @@ async def run_graphql_server(mongo_url, indexer_id):
     view = IndexerGraphQLView(db, schema=schema)
 
     app = web.Application()
-    app.router.add_route("*", "/graphql", view)
+    cors = aiohttp_cors.setup(
+        app,
+        defaults={
+            "*": aiohttp_cors.ResourceOptions(
+                allow_credentials=True, allow_headers="*", allow_methods="*"
+            )
+        },
+    )
+
+    resource = cors.add(app.router.add_resource("/graphql"))
+    cors.add(resource.add_route("*", view))
 
     runner = web.AppRunner(app)
     await runner.setup()

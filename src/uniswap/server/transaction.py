@@ -17,15 +17,15 @@ class Transaction:
 
     @strawberry.field
     def mints(self, info) -> List["Mint"]:
-        return transaction_mints(info, self)
+        return get_transaction_mints(info, self)
 
     @strawberry.field
     def burns(self, info) -> List["Burn"]:
-        return transaction_burns(info, self)
+        return get_transaction_burns(info, self)
 
     @strawberry.field
     def swaps(self, info) -> List["Swap"]:
-        return transaction_swaps(info, self)
+        return get_transaction_swaps(info, self)
 
     @classmethod
     def from_mongo(cls, data):
@@ -48,6 +48,10 @@ class Mint:
     @strawberry.field
     def id(self) -> str:
         return f"{serialize_hex(self.transaction_hash)}-{self.index}"
+
+    @strawberry.field
+    def transaction(self, info) -> Transaction:
+        return get_transaction(info, self.transaction_hash)
 
     @classmethod
     def from_mongo(cls, data):
@@ -80,6 +84,10 @@ class Burn:
     @strawberry.field
     def id(self) -> str:
         return f"{serialize_hex(self.transaction_hash)}-{self.index}"
+
+    @strawberry.field
+    def transaction(self, info) -> Transaction:
+        return get_transaction(info, self.transaction_hash)
 
     @classmethod
     def from_mongo(cls, data):
@@ -114,6 +122,10 @@ class Swap:
     def id(self) -> str:
         return f"{serialize_hex(self.transaction_hash)}-{self.index}"
 
+    @strawberry.field
+    def transaction(self, info) -> Transaction:
+        return get_transaction(info, self.transaction_hash)
+
     @classmethod
     def from_mongo(cls, data):
         return cls(
@@ -142,7 +154,17 @@ async def get_transactions(
     return [Transaction.from_mongo(d) for d in cursor]
 
 
-def transaction_mints(info: Info, root) -> List[Mint]:
+def get_transaction(info: Info, hash: FieldElement) -> Transaction:
+    db: Database = info.context["db"]
+
+    query = {"hash": hash}
+    add_block_constraint(query, None)
+
+    transaction = db["transactions"].find_one(query)
+    return Transaction.from_mongo(transaction)
+
+
+def get_transaction_mints(info: Info, root) -> List[Mint]:
     db: Database = info.context["db"]
 
     query = {"transaction_hash": root.id}
@@ -152,7 +174,7 @@ def transaction_mints(info: Info, root) -> List[Mint]:
     return [Mint.from_mongo(d) for d in cursor]
 
 
-def transaction_burns(info: Info, root) -> List[Burn]:
+def get_transaction_burns(info: Info, root) -> List[Burn]:
     db: Database = info.context["db"]
 
     query = {"transaction_hash": root.id}
@@ -162,7 +184,7 @@ def transaction_burns(info: Info, root) -> List[Burn]:
     return [Burn.from_mongo(d) for d in cursor]
 
 
-def transaction_swaps(info: Info, root) -> List[Swap]:
+def get_transaction_swaps(info: Info, root) -> List[Swap]:
     db: Database = info.context["db"]
 
     query = {"transaction_hash": root.id}
