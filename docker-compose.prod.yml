@@ -18,7 +18,27 @@ services:
       dockerfile: Dockerfile
     restart: always
     command:
-    - start
+    - indexer
+    - --mongo-url
+    - "mongodb://apibara:apibara@mongo:27017"
+    - --stream-url
+    - "mainnet.starknet.stream.apibara.com"
+    - --rpc-url
+    - "${STARKNET_RPC_URL}"
+    environment:
+      PYTHONUNBUFFERED: "1"
+    links:
+    - mongo
+
+  server:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+    - 8000:8000
+    command:
+    - server
     - --mongo-url
     - "mongodb://apibara:apibara@mongo:27017"
     environment:
