@@ -1,9 +1,19 @@
-# Web3 Indexer with Apibara
+# DEX Indexer and GraphQL API with Apibara
 
-This repository uses [Apibara](https://github.com/apibara/apibara) to index web3 data.
+This repository shows how to use Apibara to index a decentralized exchange (DEX) and build a GraphQL API.
+
+This project separates the indexer from the API server so that it becomes easier to deploy and scale in a production environment.
+
+You should always run a single instance of the indexer but can run multiple API servers side by side to serve more users.
+
+The project uses:
+
+ * the [Apibara Python SDK](https://www.apibara.com/docs/python-sdk) for receiving StarkNet data.
+ * MongoDB for storage.
+ * [Strawberry GraphQL](https://strawberry.rocks/) for the GraphQL API server.
 
 
-## Getting Started
+## Setting up
 
 Create a new virtual environment for this project. While this step is not required, it is _highly recommended_ to avoid conflicts between different installed packages.
 
@@ -24,20 +34,70 @@ Start MongoDB using the provided `docker-compose` file:
 
 Notice that you can use any managed MongoDB like MongoDB Atlas.
 
-Then start the indexer by running the `indexer start` command. The `indexer` command runs the cli application defined in `src/indexer/main.py`. This is a standard Click application.
 
-Notice that by default the indexer will start indexing from where it left off in the previous run. If you want restart, use the `--restart` flag.
+## Getting started
 
-    indexer start --restart
+This example shows how to index JediSwap on StarkNet. You can change it to index any Uniswap-V2-like DEX by changing the configuration in `src/swap/indexer/jediswap.py`.
 
-Notice that will also delete the database with the indexer's data.
+Once setup, start indexing by running the following command:
+
+```sh
+poetry run swap-indexer indexer \
+    --stream-url <stream-url> \
+    --mongo-url <mongo-url> \
+    --rpc-url <rpc-url>
+```
+
+where:
+
+ * `<stream-url>`: the Apibara stream, should be `mainnet.starknet.stream.apibara.com`.
+ * `<mongo-url>`: mongodb connection url. If you use the provided docker compose file use `mongodb://apibara:apibara@localhost:27017`.
+ * `<rpc-url>`: the StarkNet RPC url. You can use Infura for this.
+
+The indexer will then start indexing your DEX.
+
+Start the GraphQL API server with:
+
+```sh
+poetry run swap-indexer server \
+    --mongo-url <mongo-url>
+```
+
+where `<mongo-url>` is the same connection string you used above.
+The GraphQL API is served at `http://localhost:8000/graphql` and
+it includes a GrapihQL page for testing the API.
 
 
-## Customizing the template
+## Production deployment & scaling
 
-You can change the id of the indexer by changing the value of the `indexer_id` variable in `src/indexer/indexer.py`. This id is also used as the name of the Mongo database where the indexer data is stored.
+The repository contains a `docker-compose.prod.yml` file with a good starting point for a production deployment.
+
+Here are some changes you should be considering:
+
+ * Use a managed MongoDB, for example MongoDB Atlas.
+ * Run the indexer and the API server on separate machines.
 
 
-## Running in production
+As the number of users grows, you may need to scale your API server:
 
-This template includes a `Dockerfile` that you can use to package the indexer for production usage.
+ * Deploy multiple instances of the API server behind a load balancer.
+ * Replicate the database and connect the API servers to the replicas.
+ * Cache entities with e.g. redis.
+
+
+## License
+
+
+   Copyright 2022 GNC Labs Limited
+
+   Licensed under the Apache License, Version 2.0 (the "License");
+   you may not use this file except in compliance with the License.
+   You may obtain a copy of the License at
+
+       http://www.apache.org/licenses/LICENSE-2.0
+
+   Unless required by applicable law or agreed to in writing, software
+   distributed under the License is distributed on an "AS IS" BASIS,
+   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+   See the License for the specific language governing permissions and
+   limitations under the License.

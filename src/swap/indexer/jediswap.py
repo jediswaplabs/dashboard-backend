@@ -10,6 +10,8 @@ jediswap_factory = int(
     "0x00dad44c139a476c7a17fc8141e6db680e9abc9f56fe249a105094c44382c2fd", 16
 )
 
+index_from_block = 10_760
+
 _eth = int("049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7", 16)
 _usdc = int("053c91253bc9682c04929ca02ed00b3e423f6710d2ee7e0d5ebb06f3ecf368a8", 16)
 

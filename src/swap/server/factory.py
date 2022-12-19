@@ -1,5 +1,5 @@
 from decimal import Decimal
-from typing import Optional
+from typing import List, Optional
 
 import strawberry
 from pymongo.database import Database
@@ -45,7 +45,7 @@ class Factory:
 
 async def get_factories(
     info, block: Optional[BlockFilter] = None, where: Optional[FactoryFilter] = None
-) -> Optional[Factory]:
+) -> List[Factory]:
     db: Database = info.context["db"]
 
     query = dict()

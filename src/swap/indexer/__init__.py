@@ -1,4 +1,3 @@
-from datetime import datetime
 from decimal import Decimal
 
 from apibara import EventFilter, Info, NewEvents
@@ -11,7 +10,7 @@ from swap.indexer.context import IndexerContext
 from swap.indexer.core import (handle_burn, handle_mint, handle_swap,
                                   handle_sync, handle_transfer)
 from swap.indexer.factory import handle_pair_created
-from swap.indexer.jediswap import get_eth_price
+from swap.indexer.jediswap import get_eth_price, index_from_block
 
 factory_address = "0x00dad44c139a476c7a17fc8141e6db680e9abc9f56fe249a105094c44382c2fd"
 
@@ -76,7 +75,10 @@ async def run_indexer(stream_url, mongodb_url, rpc_url, indexer_id, restart):
         filters=[
             EventFilter.from_event_name(name="PairCreated", address=factory_address)
         ],
-        index_from_block=10_760,
+        index_from_block=index_from_block,
     )
 
-    await runner.run()
+    while True:
+        await runner.run()
+        logger.warn("disconnected. reconnecting.")
+
