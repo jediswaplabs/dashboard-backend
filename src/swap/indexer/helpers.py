@@ -7,7 +7,7 @@ from starknet_py.cairo.felt import decode_shortstring
 from starknet_py.contract import ContractFunction
 from starknet_py.net.client_models import Call
 
-from uniswap.indexer.context import IndexerContext
+from swap.indexer.context import IndexerContext
 
 
 def felt(n: int) -> str:

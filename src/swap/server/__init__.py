@@ -8,7 +8,7 @@ from aiohttp import web
 from pymongo import MongoClient
 from strawberry.aiohttp.views import GraphQLView
 
-from uniswap.server.query import Query
+from swap.server.query import Query
 
 
 class IndexerGraphQLView(GraphQLView):

@@ -4,7 +4,7 @@ from typing import Optional
 import strawberry
 from pymongo.database import Database
 
-from uniswap.server.helpers import (BlockFilter, FieldElement,
+from swap.server.helpers import (BlockFilter, FieldElement,
                                     add_block_constraint)
 
 

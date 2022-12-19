@@ -6,10 +6,9 @@ import strawberry
 from pymongo.database import Database
 from strawberry.types import Info
 
-from uniswap.server.helpers import (FieldElement, add_block_constraint,
+from swap.server.helpers import (FieldElement, add_block_constraint,
                                     serialize_hex)
-from uniswap.server.pair import Pair, get_pair
-from uniswap.server.token import Token, get_token
+from swap.server.pair import Pair, get_pair
 
 
 @strawberry.type

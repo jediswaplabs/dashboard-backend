@@ -4,8 +4,8 @@ from functools import wraps
 import click
 from structlog import get_logger
 
-from uniswap.indexer import run_indexer
-from uniswap.server import run_graphql_server
+from swap.indexer import run_indexer
+from swap.server import run_graphql_server
 
 logger = get_logger(__name__)
 

@@ -6,8 +6,8 @@ import strawberry
 from pymongo.database import Database
 from strawberry.types import Info
 
-from uniswap.server.helpers import FieldElement, add_block_constraint
-from uniswap.server.token import Token, get_token
+from swap.server.helpers import FieldElement, add_block_constraint
+from swap.server.token import Token, get_token
 
 
 async def get_pair_token0(info: Info, root) -> Token:

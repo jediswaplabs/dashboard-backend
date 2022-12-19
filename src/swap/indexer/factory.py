@@ -5,8 +5,8 @@ from apibara.model import BlockHeader, StarkNetEvent
 from bson import Decimal128
 from structlog import get_logger
 
-from uniswap.indexer.abi import decode_event, pair_created_decoder
-from uniswap.indexer.helpers import create_token, felt
+from swap.indexer.abi import decode_event, pair_created_decoder
+from swap.indexer.helpers import create_token, felt
 
 logger = get_logger(__name__)
 

@@ -2,12 +2,12 @@ from typing import List
 
 import strawberry
 
-from uniswap.server.factory import Factory, get_factories
-from uniswap.server.liquidity_position import (LiquidityPosition,
+from swap.server.factory import Factory, get_factories
+from swap.server.liquidity_position import (LiquidityPosition,
                                                get_liquidity_positions)
-from uniswap.server.pair import Pair, get_pairs
-from uniswap.server.token import Token, get_tokens
-from uniswap.server.transaction import Transaction, get_transactions
+from swap.server.pair import Pair, get_pairs
+from swap.server.token import Token, get_tokens
+from swap.server.transaction import Transaction, get_transactions
 
 
 @strawberry.type

@@ -4,8 +4,8 @@ from typing import Union
 from apibara import Info
 from bson import Decimal128
 
-from uniswap.indexer.context import IndexerContext
-from uniswap.indexer.helpers import felt
+from swap.indexer.context import IndexerContext
+from swap.indexer.helpers import felt
 
 
 async def snapshot_pair_day_data(info: Info[IndexerContext], pair_address: int):

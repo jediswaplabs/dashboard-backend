@@ -3,8 +3,8 @@ from typing import Union
 
 from apibara import Info
 
-from uniswap.indexer.context import IndexerContext
-from uniswap.indexer.helpers import felt
+from swap.indexer.context import IndexerContext
+from swap.indexer.helpers import felt
 
 jediswap_factory = int(
     "0x00dad44c139a476c7a17fc8141e6db680e9abc9f56fe249a105094c44382c2fd", 16

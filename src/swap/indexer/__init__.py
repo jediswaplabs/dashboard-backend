@@ -7,11 +7,11 @@ from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.models import StarknetChainId
 from structlog import get_logger
 
-from uniswap.indexer.context import IndexerContext
-from uniswap.indexer.core import (handle_burn, handle_mint, handle_swap,
+from swap.indexer.context import IndexerContext
+from swap.indexer.core import (handle_burn, handle_mint, handle_swap,
                                   handle_sync, handle_transfer)
-from uniswap.indexer.factory import handle_pair_created
-from uniswap.indexer.jediswap import get_eth_price
+from swap.indexer.factory import handle_pair_created
+from swap.indexer.jediswap import get_eth_price
 
 factory_address = "0x00dad44c139a476c7a17fc8141e6db680e9abc9f56fe249a105094c44382c2fd"
 

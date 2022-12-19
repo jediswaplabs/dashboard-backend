@@ -5,7 +5,7 @@ import strawberry
 from pymongo.database import Database
 from strawberry.types import Info
 
-from uniswap.server.helpers import FieldElement, add_block_constraint
+from swap.server.helpers import FieldElement, add_block_constraint
 
 
 @strawberry.type

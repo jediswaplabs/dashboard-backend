@@ -6,22 +6,22 @@ from bson import Decimal128
 from more_itertools import pairwise
 from structlog import get_logger
 
-from uniswap.indexer.abi import (burn_decoder, decode_event, mint_decoder,
+from swap.indexer.abi import (burn_decoder, decode_event, mint_decoder,
                                  swap_decoder, sync_decoder, transfer_decoder)
-from uniswap.indexer.context import IndexerContext
-from uniswap.indexer.daily import (snapshot_exchange_day_data,
+from swap.indexer.context import IndexerContext
+from swap.indexer.daily import (snapshot_exchange_day_data,
                                    snapshot_pair_day_data,
                                    snapshot_pair_hour_data,
                                    snapshot_token_day_data,
                                    update_exchange_day_data,
                                    update_pair_day_data, update_pair_hour_data,
                                    update_token_day_data)
-from uniswap.indexer.helpers import (create_liquidity_snapshot, create_token,
+from swap.indexer.helpers import (create_liquidity_snapshot, create_token,
                                      create_transaction, felt,
                                      fetch_token_balance, price,
                                      replace_liquidity_position, to_decimal,
                                      update_transaction_count)
-from uniswap.indexer.jediswap import (find_eth_per_token,
+from swap.indexer.jediswap import (find_eth_per_token,
                                       get_tracked_liquidity_usd,
                                       get_tracked_volume_usd, jediswap_factory)
 
