@@ -6,6 +6,10 @@ from apibara import Info
 from swap.indexer.context import IndexerContext
 from swap.indexer.helpers import felt
 
+from structlog import get_logger
+
+logger = get_logger(__name__)
+
 jediswap_factory = int(
     "0x00dad44c139a476c7a17fc8141e6db680e9abc9f56fe249a105094c44382c2fd", 16
 )
@@ -61,6 +65,7 @@ async def find_eth_per_token(info: Info[IndexerContext], token: Union[int, bytes
                 token1 = await info.storage.find_one(
                     "tokens", {"id": felt(whitelisted)}
                 )
+                logger.info("find_eth_per_token", token1=token1["symbol"], pair=pair["token1_price"], token1_eth=token1["derived_eth"])
                 return (
                     pair["token1_price"].to_decimal()
                     * token1["derived_eth"].to_decimal()
@@ -74,6 +79,7 @@ async def find_eth_per_token(info: Info[IndexerContext], token: Union[int, bytes
                 token0 = await info.storage.find_one(
                     "tokens", {"id": felt(whitelisted)}
                 )
+                logger.info("find_eth_per_token", token0=token0["symbol"], pair=pair["token0_price"], token0_eth=token0["derived_eth"])
                 return (
                     pair["token0_price"].to_decimal()
                     * token0["derived_eth"].to_decimal()

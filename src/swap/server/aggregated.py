@@ -1,0 +1,142 @@
+from datetime import datetime
+from decimal import Decimal
+from typing import Dict, List, Optional, Mapping
+from bson import Decimal128
+
+import strawberry
+from pymongo.database import Database
+from strawberry.types import Info
+
+from swap.server.helpers import FieldElement, add_block_constraint, add_order_by_constraint
+from swap.server.token import Token, get_token
+
+
+async def get_pair_token0(info: Info, root) -> Token:
+    return await get_token(info, root.token0_id)
+
+
+async def get_pair_token1(info: Info, root) -> Token:
+    return await get_token(info, root.token1_id)
+
+
+@strawberry.type
+class ExchangeDayData:
+    id: FieldElement
+    day_id: int
+    date: datetime
+
+    # total_volume_usd: Decimal = strawberry.field(name="totalVolumeUSD")  ## TODO after reindexing
+    daily_volume_usd: Decimal = strawberry.field(name="dailyVolumeUSD")
+    daily_volume_eth: Decimal = strawberry.field(name="dailyVolumeETH")
+    total_liquidity_usd: Decimal = strawberry.field(name="totalLiquidityUSD")
+    total_liquidity_eth: Decimal = strawberry.field(name="totalLiquidityETH")
+
+    @classmethod
+    def from_mongo(cls, data):
+        return cls(
+            id=data["address"],
+            day_id=data["day_id"],
+            date=data["date"],
+            daily_volume_usd=data.get("daily_volume_usd", Decimal128("0")).to_decimal(),
+            daily_volume_eth=data.get("daily_volume_usd", Decimal128("0")).to_decimal(),
+            total_liquidity_usd=data["total_liquidity_usd"].to_decimal(),
+            total_liquidity_eth=data["total_liquidity_eth"].to_decimal()
+        )
+
+
+async def get_exchange_day_datas(
+    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc"
+) -> List[ExchangeDayData]:
+    db: Database = info.context["db"]
+
+    query = dict()
+    add_block_constraint(query, None)
+
+    cursor = db["exchange_day_data"].find(query, limit=first, skip=skip)
+    cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
+
+    return [ExchangeDayData.from_mongo(d) for d in cursor]
+
+
+@strawberry.type
+class PairDayData:
+    pair_id: FieldElement
+    day_id: int
+    date: datetime
+
+    daily_volume_token0: Decimal = strawberry.field(name="dailyVolumeToken0")
+    daily_volume_token1: Decimal = strawberry.field(name="dailyVolumeToken1")
+    daily_volume_usd: Decimal = strawberry.field(name="dailyVolumeUSD")
+    total_supply: Decimal = strawberry.field(name="totalSupply")
+    reserve_usd: Decimal = strawberry.field(name="reserveUSD")
+
+    @classmethod
+    def from_mongo(cls, data):
+        return cls(
+            pair_id=data["pair_id"],
+            day_id=data["day_id"],
+            date=data["date"],
+            daily_volume_token0=data.get("daily_volume_token0", Decimal128("0")).to_decimal(),
+            daily_volume_token1=data.get("daily_volume_token1", Decimal128("0")).to_decimal(),
+            daily_volume_usd=data.get("daily_volume_usd", Decimal128("0")).to_decimal(),
+            total_supply=data["total_supply"].to_decimal(),
+            reserve_usd=data["reserve_usd"].to_decimal()
+        )
+
+
+async def get_pair_day_datas(
+    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc"
+) -> List[PairDayData]:
+    db: Database = info.context["db"]
+
+    query = dict()
+    add_block_constraint(query, None)
+
+    cursor = db["pair_day_data"].find(query, limit=first, skip=skip)
+    cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
+
+    return [PairDayData.from_mongo(d) for d in cursor]
+
+
+@strawberry.type
+class TokenDayData:
+    token_id: FieldElement
+    day_id: int
+    date: datetime
+
+    price_usd: Decimal = strawberry.field(name="priceUSD")
+    total_liquidity_token: Decimal = strawberry.field(name="totalLiquidityToken")
+    total_liquidity_eth: Decimal = strawberry.field(name="totalLiquidityUSD")
+    total_liquidity_usd: Decimal = strawberry.field(name="totalLiquidityETH")
+    daily_volume_token: Decimal = strawberry.field(name="dailyVolumeToken")
+    daily_volume_eth: Decimal = strawberry.field(name="dailyVolumeETH")
+    daily_volume_usd: Decimal = strawberry.field(name="dailyVolumeUSD")
+
+    @classmethod
+    def from_mongo(cls, data):
+        return cls(
+            token_id=data["token_id"],
+            day_id=data["day_id"],
+            date=data["date"],
+            price_usd=data["price_usd"].to_decimal(),
+            total_liquidity_token=data["total_liquidity_token"].to_decimal(),
+            total_liquidity_eth=data["total_liquidity_eth"].to_decimal(),
+            total_liquidity_usd=data["total_liquidity_usd"].to_decimal(),
+            daily_volume_token=data.get("daily_volume_token", Decimal128("0")).to_decimal(),
+            daily_volume_eth=data.get("daily_volume_eth", Decimal128("0")).to_decimal(),
+            daily_volume_usd=data.get("daily_volume_usd", Decimal128("0")).to_decimal()
+        )
+
+
+async def get_token_day_datas(
+    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc"
+) -> List[TokenDayData]:
+    db: Database = info.context["db"]
+
+    query = dict()
+    add_block_constraint(query, None)
+
+    cursor = db["token_day_data"].find(query, limit=first, skip=skip)
+    cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
+
+    return [TokenDayData.from_mongo(d) for d in cursor]

@@ -101,6 +101,8 @@ async def snapshot_exchange_day_data(info: Info[IndexerContext], address: int):
             "address": felt(address),
             "day_id": day_id,
             "date": day_start,
+            "total_volume_usd": exchange["total_volume_usd"],
+            "total_volume_eth": exchange["total_volume_eth"],
             "total_liquidity_usd": exchange["total_liquidity_usd"],
             "total_liquidity_eth": exchange["total_liquidity_eth"],
             "transaction_count": exchange["transaction_count"],

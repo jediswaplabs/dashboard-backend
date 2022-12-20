@@ -6,7 +6,7 @@ import strawberry
 from pymongo.database import Database
 from strawberry.types import Info
 
-from swap.server.helpers import FieldElement, add_block_constraint
+from swap.server.helpers import FieldElement, add_block_constraint, add_order_by_constraint
 from swap.server.token import Token, get_token
 
 
@@ -29,6 +29,8 @@ class Pair:
     total_supply: Decimal
     tracked_reserve_eth: Decimal = strawberry.field(name="trackedReserveETH")
     reserve_eth: Decimal = strawberry.field(name="reserveETH")
+    volume_token0: Decimal = strawberry.field(name="volumeToken0")
+    volume_token1: Decimal = strawberry.field(name="volumeToken1")
     volume_usd: Decimal = strawberry.field(name="volumeUSD")
     untracked_volume_usd: Decimal = strawberry.field(name="untrackedVolumeUSD")
     token0_price: Decimal
@@ -52,6 +54,8 @@ class Pair:
             total_supply=data["total_supply"].to_decimal(),
             tracked_reserve_eth=data["tracked_reserve_eth"].to_decimal(),
             reserve_eth=data["reserve_eth"].to_decimal(),
+            volume_token0=data["volume_token0"].to_decimal(),
+            volume_token1=data["volume_token1"].to_decimal(),
             volume_usd=data["volume_usd"].to_decimal(),
             untracked_volume_usd=data["untracked_volume_usd"].to_decimal(),
             token0_price=data["token0_price"].to_decimal(),
@@ -63,7 +67,7 @@ class Pair:
 
 
 async def get_pairs(
-    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0
+    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc"
 ) -> List[Pair]:
     db: Database = info.context["db"]
 
@@ -71,6 +75,7 @@ async def get_pairs(
     add_block_constraint(query, None)
 
     cursor = db["pairs"].find(query, skip=skip, limit=first)
+    cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
 
     return [Pair.from_mongo(d) for d in cursor]
 

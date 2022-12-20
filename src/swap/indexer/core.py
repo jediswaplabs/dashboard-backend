@@ -498,6 +498,8 @@ async def handle_swap(
     token1 = await info.storage.find_one("tokens", {"id": pair["token1_id"]})
     assert token1 is not None
 
+    logger.info("handle Swap: derived eth", token0=token0["derived_eth"], token1=token1["derived_eth"])
+
     amount0_in = to_decimal(swap.amount0_in, token0["decimals"])
     amount1_in = to_decimal(swap.amount1_in, token1["decimals"])
     amount0_out = to_decimal(swap.amount0_out, token0["decimals"])

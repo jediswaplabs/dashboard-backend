@@ -1,13 +1,13 @@
 from datetime import datetime
 from decimal import Decimal
+from tokenize import String
 from typing import List, Optional
 
 import strawberry
 from pymongo.database import Database
 from strawberry.types import Info
 
-from swap.server.helpers import (FieldElement, add_block_constraint,
-                                    serialize_hex)
+from swap.server.helpers import (FieldElement, add_block_constraint, add_order_by_constraint, serialize_hex)
 
 
 @strawberry.type
@@ -34,10 +34,11 @@ class Transaction:
 
 @strawberry.type
 class Mint:
-    transaction_hash: strawberry.Private[FieldElement]
     index: strawberry.Private[int]
-    pair_id: strawberry.Private[FieldElement]
 
+    transaction_hash: FieldElement
+    timestamp: datetime
+    pair_id: FieldElement
     sender: FieldElement
     to: FieldElement
     liquidity: Decimal
@@ -49,14 +50,11 @@ class Mint:
     def id(self) -> str:
         return f"{serialize_hex(self.transaction_hash)}-{self.index}"
 
-    @strawberry.field
-    def transaction(self, info) -> Transaction:
-        return get_transaction(info, self.transaction_hash)
-
     @classmethod
     def from_mongo(cls, data):
         return cls(
             transaction_hash=data["transaction_hash"],
+            timestamp=data["timestamp"],
             index=data["index"],
             pair_id=data["pair_id"],
             sender=data["sender"],
@@ -70,10 +68,11 @@ class Mint:
 
 @strawberry.type
 class Burn:
-    transaction_hash: strawberry.Private[FieldElement]
     index: strawberry.Private[int]
-    pair_id: strawberry.Private[FieldElement]
 
+    transaction_hash: FieldElement
+    timestamp: datetime
+    pair_id: FieldElement
     sender: FieldElement
     to: FieldElement
     liquidity: Decimal
@@ -85,14 +84,11 @@ class Burn:
     def id(self) -> str:
         return f"{serialize_hex(self.transaction_hash)}-{self.index}"
 
-    @strawberry.field
-    def transaction(self, info) -> Transaction:
-        return get_transaction(info, self.transaction_hash)
-
     @classmethod
     def from_mongo(cls, data):
         return cls(
             transaction_hash=data["transaction_hash"],
+            timestamp=data["timestamp"],
             index=data["index"],
             pair_id=data["pair_id"],
             sender=data["sender"],
@@ -106,10 +102,11 @@ class Burn:
 
 @strawberry.type
 class Swap:
-    transaction_hash: strawberry.Private[FieldElement]
     index: strawberry.Private[int]
-    pair_id: strawberry.Private[FieldElement]
 
+    transaction_hash: FieldElement
+    timestamp: datetime
+    pair_id: FieldElement
     sender: FieldElement
     to: FieldElement
     amount0_in: Decimal
@@ -122,14 +119,11 @@ class Swap:
     def id(self) -> str:
         return f"{serialize_hex(self.transaction_hash)}-{self.index}"
 
-    @strawberry.field
-    def transaction(self, info) -> Transaction:
-        return get_transaction(info, self.transaction_hash)
-
     @classmethod
     def from_mongo(cls, data):
         return cls(
             transaction_hash=data["transaction_hash"],
+            timestamp=data["timestamp"],
             index=data["log_index"],
             pair_id=data["pair_id"],
             sender=data["sender"],
@@ -143,7 +137,7 @@ class Swap:
 
 
 async def get_transactions(
-    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0
+    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc"
 ) -> List[Transaction]:
     db: Database = info.context["db"]
 
@@ -151,6 +145,7 @@ async def get_transactions(
     add_block_constraint(query, None)
 
     cursor = db["transactions"].find(query, limit=first, skip=skip)
+    cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
     return [Transaction.from_mongo(d) for d in cursor]
 
 
@@ -192,3 +187,42 @@ def get_transaction_swaps(info: Info, root) -> List[Swap]:
 
     cursor = db["swaps"].find(query)
     return [Swap.from_mongo(d) for d in cursor]
+
+
+async def get_swaps(
+    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc"
+) -> List[Swap]:
+    db: Database = info.context["db"]
+
+    query = dict()
+    add_block_constraint(query, None)
+
+    cursor = db["swaps"].find(query, limit=first, skip=skip)
+    icursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
+    return [Swap.from_mongo(d) for d in cursor]
+
+
+async def get_mints(
+    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc"
+) -> List[Mint]:
+    db: Database = info.context["db"]
+
+    query = dict()
+    add_block_constraint(query, None)
+
+    cursor = db["mints"].find(query, limit=first, skip=skip)
+    cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
+    return [Mint.from_mongo(d) for d in cursor]
+
+
+async def get_burns(
+    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc"
+) -> List[Mint]:
+    db: Database = info.context["db"]
+
+    query = dict()
+    add_block_constraint(query, None)
+
+    cursor = db["mints"].find(query, limit=first, skip=skip)
+    cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
+    return [Mint.from_mongo(d) for d in cursor]
