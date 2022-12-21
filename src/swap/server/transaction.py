@@ -2,12 +2,14 @@ from datetime import datetime
 from decimal import Decimal
 from tokenize import String
 from typing import List, Optional
+from dataclasses import field
 
 import strawberry
 from pymongo.database import Database
 from strawberry.types import Info
 
-from swap.server.helpers import (FieldElement, add_block_constraint, add_order_by_constraint, serialize_hex)
+from swap.server.helpers import (FieldElement, felt, add_block_constraint, add_order_by_constraint, serialize_hex)
+from swap.server.pair import Pair, get_pair
 
 
 @strawberry.type
@@ -35,10 +37,10 @@ class Transaction:
 @strawberry.type
 class Mint:
     index: strawberry.Private[int]
+    pair_id: strawberry.Private[FieldElement]
 
     transaction_hash: FieldElement
     timestamp: datetime
-    pair_id: FieldElement
     sender: FieldElement
     to: FieldElement
     liquidity: Decimal
@@ -49,6 +51,10 @@ class Mint:
     @strawberry.field
     def id(self) -> str:
         return f"{serialize_hex(self.transaction_hash)}-{self.index}"
+
+    @strawberry.field
+    def pair(self, info: Info) -> Pair:
+        return get_pair(info, self.pair_id)
 
     @classmethod
     def from_mongo(cls, data):
@@ -69,10 +75,10 @@ class Mint:
 @strawberry.type
 class Burn:
     index: strawberry.Private[int]
+    pair_id: strawberry.Private[FieldElement]
 
     transaction_hash: FieldElement
     timestamp: datetime
-    pair_id: FieldElement
     sender: FieldElement
     to: FieldElement
     liquidity: Decimal
@@ -83,6 +89,10 @@ class Burn:
     @strawberry.field
     def id(self) -> str:
         return f"{serialize_hex(self.transaction_hash)}-{self.index}"
+    
+    @strawberry.field
+    def pair(self, info: Info) -> Pair:
+        return get_pair(info, self.pair_id)
 
     @classmethod
     def from_mongo(cls, data):
@@ -103,6 +113,7 @@ class Burn:
 @strawberry.type
 class Swap:
     index: strawberry.Private[int]
+    pair_id: strawberry.Private[FieldElement]
 
     transaction_hash: FieldElement
     timestamp: datetime
@@ -118,6 +129,10 @@ class Swap:
     @strawberry.field
     def id(self) -> str:
         return f"{serialize_hex(self.transaction_hash)}-{self.index}"
+
+    @strawberry.field
+    def pair(self, info: Info) -> Pair:
+        return get_pair(info, self.pair_id)
 
     @classmethod
     def from_mongo(cls, data):
@@ -188,41 +203,89 @@ def get_transaction_swaps(info: Info, root) -> List[Swap]:
     cursor = db["swaps"].find(query)
     return [Swap.from_mongo(d) for d in cursor]
 
+@strawberry.input
+class WhereFilterForMintandSwap:
+    pair: Optional[str] = None
+    pair_in: Optional[List[str]] = field(default_factory=list)
+    to: Optional[str] = None
 
 async def get_swaps(
-    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc"
+    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc", where: Optional[WhereFilterForMintandSwap] = None
 ) -> List[Swap]:
     db: Database = info.context["db"]
 
     query = dict()
     add_block_constraint(query, None)
 
+    if where is not None:
+        if where.pair is not None:
+            pair_id = int(where.pair, 16)
+            query["pair_id"] = felt(pair_id)
+        if where.pair_in:
+            pair_in = []
+            for pair in where.pair_in:
+                pair_in.append(felt(int(pair, 16)))
+            query["pair_id"] = {"$in": pair_in}
+        if where.to is not None:
+            to = int(where.to, 16)
+            query["to"] = felt(to)
+
     cursor = db["swaps"].find(query, limit=first, skip=skip)
-    icursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
+    cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
     return [Swap.from_mongo(d) for d in cursor]
 
-
 async def get_mints(
-    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc"
+    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc", where: Optional[WhereFilterForMintandSwap] = None
 ) -> List[Mint]:
     db: Database = info.context["db"]
 
     query = dict()
     add_block_constraint(query, None)
 
+    if where is not None:
+        if where.pair is not None:
+            pair_id = int(where.pair, 16)
+            query["pair_id"] = felt(pair_id)
+        if where.pair_in:
+            pair_in = []
+            for pair in where.pair_in:
+                pair_in.append(felt(int(pair, 16)))
+            query["pair_id"] = {"$in": pair_in}
+        if where.to is not None:
+            to = int(where.to, 16)
+            query["to"] = felt(to)
+    
     cursor = db["mints"].find(query, limit=first, skip=skip)
     cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
     return [Mint.from_mongo(d) for d in cursor]
 
+@strawberry.input
+class WhereFilterForBurn:
+    pair: Optional[str] = None
+    pair_in: Optional[List[str]] = field(default_factory=list)
+    sender: Optional[str] = None
 
 async def get_burns(
-    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc"
+    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc", where: Optional[WhereFilterForBurn] = None
 ) -> List[Mint]:
     db: Database = info.context["db"]
 
     query = dict()
     add_block_constraint(query, None)
 
-    cursor = db["mints"].find(query, limit=first, skip=skip)
+    if where is not None:
+        if where.pair is not None:
+            pair_id = int(where.pair, 16)
+            query["pair_id"] = felt(pair_id)
+        if where.pair_in:
+            pair_in = []
+            for pair in where.pair_in:
+                pair_in.append(felt(int(pair, 16)))
+            query["pair_id"] = {"$in": pair_in}
+        if where.sender is not None:
+            sender = int(where.sender, 16)
+            query["sender"] = felt(sender)
+
+    cursor = db["burns"].find(query, limit=first, skip=skip)
     cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
     return [Mint.from_mongo(d) for d in cursor]

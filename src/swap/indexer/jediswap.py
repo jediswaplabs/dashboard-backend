@@ -1,5 +1,6 @@
 from decimal import Decimal
 from typing import Union
+from bson import Decimal128
 
 from apibara import Info
 
@@ -53,7 +54,7 @@ async def find_eth_per_token(info: Info[IndexerContext], token: Union[int, bytes
     if isinstance(token, int):
         token = felt(token)
 
-    if token == felt(_eth):
+    if token == felt(_eth): 
         return Decimal("1")
 
     for whitelisted in _whitelist:
@@ -65,11 +66,13 @@ async def find_eth_per_token(info: Info[IndexerContext], token: Union[int, bytes
                 token1 = await info.storage.find_one(
                     "tokens", {"id": felt(whitelisted)}
                 )
-                logger.info("find_eth_per_token", token1=token1["symbol"], pair=pair["token1_price"], token1_eth=token1["derived_eth"])
-                return (
-                    pair["token1_price"].to_decimal()
-                    * token1["derived_eth"].to_decimal()
-                )
+                token0_derived_eth = pair["token1_price"].to_decimal() * token1["derived_eth"].to_decimal()
+                await info.storage.find_one_and_update(
+                    "tokens", 
+                    {"id": token}, 
+                    {"$set": {"derived_eth": Decimal128(token0_derived_eth)}},
+                    )
+                return (token0_derived_eth)
 
         pair = await info.storage.find_one(
             "pairs", {"token1_id": token, "token0_id": felt(whitelisted)}
@@ -79,11 +82,13 @@ async def find_eth_per_token(info: Info[IndexerContext], token: Union[int, bytes
                 token0 = await info.storage.find_one(
                     "tokens", {"id": felt(whitelisted)}
                 )
-                logger.info("find_eth_per_token", token0=token0["symbol"], pair=pair["token0_price"], token0_eth=token0["derived_eth"])
-                return (
-                    pair["token0_price"].to_decimal()
-                    * token0["derived_eth"].to_decimal()
-                )
+                token1_derived_eth = pair["token0_price"].to_decimal() * token0["derived_eth"].to_decimal()
+                await info.storage.find_one_and_update(
+                    "tokens", 
+                    {"id": token}, 
+                    {"$set": {"derived_eth": Decimal128(token1_derived_eth)}},
+                    )
+                return (token1_derived_eth)
 
     return Decimal("0")
 

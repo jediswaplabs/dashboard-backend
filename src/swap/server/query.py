@@ -18,7 +18,7 @@ from swap.server.aggregated import TokenDayData, get_token_day_datas
 
 @strawberry.type
 class Query:
-    uniswap_factories: List[Factory] = strawberry.field(resolver=get_factories)
+    jediswap_factories: List[Factory] = strawberry.field(resolver=get_factories)
     tokens: List[Token] = strawberry.field(resolver=get_tokens)
     pairs: List[Pair] = strawberry.field(resolver=get_pairs)
     transactions: List[Transaction] = strawberry.field(resolver=get_transactions)

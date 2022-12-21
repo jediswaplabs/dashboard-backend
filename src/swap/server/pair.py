@@ -1,12 +1,13 @@
 from datetime import datetime
 from decimal import Decimal
 from typing import List, Optional
+from dataclasses import field
 
 import strawberry
 from pymongo.database import Database
 from strawberry.types import Info
 
-from swap.server.helpers import FieldElement, add_block_constraint, add_order_by_constraint
+from swap.server.helpers import FieldElement, felt, add_block_constraint, add_order_by_constraint
 from swap.server.token import Token, get_token
 
 
@@ -65,14 +66,36 @@ class Pair:
             token1_id=data["token1_id"],
         )
 
+@strawberry.input
+class WhereFilterForPair:
+    id: Optional[str] = None
+    id_in: Optional[List[str]] = field(default_factory=list)
+    token0: Optional[str] = None
+    token1: Optional[str] = None
 
 async def get_pairs(
-    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc"
+    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc", where: Optional[WhereFilterForPair] = None
 ) -> List[Pair]:
     db: Database = info.context["db"]
 
     query = dict()
     add_block_constraint(query, None)
+
+    if where is not None:
+        if where.id is not None:
+            pair_id = int(where.id, 16)
+            query["id"] = felt(pair_id)
+        if where.id_in:
+            pair_in = []
+            for pair_id in where.id_in:
+                pair_in.append(felt(int(pair_id, 16)))
+            query["id"] = {"$in": pair_in}
+        if where.token0 is not None:
+            token0_id = int(where.token0, 16)
+            query["token0_id"] = felt(token0_id)
+        if where.token1 is not None:
+            token1_id = int(where.token1, 16)
+            query["token1_id"] = felt(token1_id)
 
     cursor = db["pairs"].find(query, skip=skip, limit=first)
     cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)

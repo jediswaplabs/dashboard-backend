@@ -239,13 +239,13 @@ async def handle_sync(
 
     await info.storage.find_one_and_update(
         "tokens",
-        {"id": pair["token0_id"]},
+        {"id": token0["id"]},
         {"$set": {"total_liquidity": Decimal128(token0_liquidity)}},
     )
 
     await info.storage.find_one_and_update(
         "tokens",
-        {"id": pair["token1_id"]},
+        {"id": token1["id"]},
         {"$set": {"total_liquidity": Decimal128(token1_liquidity)}},
     )
 
@@ -497,8 +497,6 @@ async def handle_swap(
 
     token1 = await info.storage.find_one("tokens", {"id": pair["token1_id"]})
     assert token1 is not None
-
-    logger.info("handle Swap: derived eth", token0=token0["derived_eth"], token1=token1["derived_eth"])
 
     amount0_in = to_decimal(swap.amount0_in, token0["decimals"])
     amount1_in = to_decimal(swap.amount1_in, token1["decimals"])

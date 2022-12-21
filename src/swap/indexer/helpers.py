@@ -54,7 +54,7 @@ async def create_token(info: Info[IndexerContext], address: int):
         # liquidity across pairs
         "total_liquidity": Decimal128("0"),
         # derived price (in eth)
-        "derived_eth": Decimal128("0"),
+        "derived_eth": Decimal128("1"),
     }
 
     await info.storage.insert_one("tokens", token)
