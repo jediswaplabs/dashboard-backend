@@ -42,28 +42,24 @@ This example shows how to index JediSwap on StarkNet. You can change it to index
 Once setup, start indexing by running the following command:
 
 ```sh
-poetry run swap-indexer indexer \
-    --stream-url <stream-url> \
-    --mongo-url <mongo-url> \
-    --rpc-url <rpc-url>
+poetry run swap-indexer indexer
 ```
 
-where:
+where you need to set following environment variables:
 
- * `<stream-url>`: the Apibara stream, should be `mainnet.starknet.stream.apibara.com`.
- * `<mongo-url>`: mongodb connection url. If you use the provided docker compose file use `mongodb://apibara:apibara@localhost:27017`.
- * `<rpc-url>`: the StarkNet RPC url. You can use Infura for this.
+ * `STREAM_URL`: the Apibara stream, should be `mainnet.starknet.stream.apibara.com`.
+ * `MONGO_URL`: mongodb connection url. If you use the provided docker compose file use `mongodb://apibara:apibara@localhost:27017`.
+ * `RPC_URL`: the StarkNet RPC url. You can use Infura for this.
 
 The indexer will then start indexing your DEX.
 
 Start the GraphQL API server with:
 
 ```sh
-poetry run swap-indexer server \
-    --mongo-url <mongo-url>
+poetry run swap-indexer server
 ```
 
-where `<mongo-url>` is the same connection string you used above.
+where environment variable `MONGO_URL` is the same connection string you used above.
 The GraphQL API is served at `http://localhost:8000/graphql` and
 it includes a GrapihQL page for testing the API.
 
