@@ -7,7 +7,7 @@ import strawberry
 from pymongo.database import Database
 from strawberry.types import Info
 
-from swap.server.helpers import FieldElement, felt, add_block_constraint, add_order_by_constraint
+from swap.server.helpers import FieldElement, BlockFilter, felt, add_block_constraint, add_order_by_constraint
 from swap.server.token import Token, get_token
 
 
@@ -74,12 +74,12 @@ class WhereFilterForPair:
     token1: Optional[str] = None
 
 async def get_pairs(
-    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc", where: Optional[WhereFilterForPair] = None
+    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc", block: Optional[BlockFilter] = None, where: Optional[WhereFilterForPair] = None
 ) -> List[Pair]:
     db: Database = info.context["db"]
 
     query = dict()
-    add_block_constraint(query, None)
+    add_block_constraint(query, block)
 
     if where is not None:
         if where.id is not None:

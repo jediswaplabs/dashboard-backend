@@ -40,7 +40,7 @@ class ExchangeDayData:
             date=data["date"],
             total_volume_usd=data.get("total_volume_usd", Decimal128("0")).to_decimal(),
             daily_volume_usd=data.get("daily_volume_usd", Decimal128("0")).to_decimal(),
-            daily_volume_eth=data.get("daily_volume_usd", Decimal128("0")).to_decimal(),
+            daily_volume_eth=data.get("daily_volume_eth", Decimal128("0")).to_decimal(),
             total_liquidity_usd=data["total_liquidity_usd"].to_decimal(),
             total_liquidity_eth=data["total_liquidity_eth"].to_decimal()
         )
@@ -142,8 +142,8 @@ class TokenDayData:
 
     price_usd: Decimal = strawberry.field(name="priceUSD")
     total_liquidity_token: Decimal = strawberry.field(name="totalLiquidityToken")
-    total_liquidity_eth: Decimal = strawberry.field(name="totalLiquidityUSD")
-    total_liquidity_usd: Decimal = strawberry.field(name="totalLiquidityETH")
+    total_liquidity_eth: Decimal = strawberry.field(name="totalLiquidityETH")
+    total_liquidity_usd: Decimal = strawberry.field(name="totalLiquidityUSD")
     daily_volume_token: Decimal = strawberry.field(name="dailyVolumeToken")
     daily_volume_eth: Decimal = strawberry.field(name="dailyVolumeETH")
     daily_volume_usd: Decimal = strawberry.field(name="dailyVolumeUSD")

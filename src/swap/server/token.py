@@ -6,7 +6,7 @@ import strawberry
 from pymongo.database import Database
 from strawberry.types import Info
 
-from swap.server.helpers import FieldElement, felt, add_block_constraint, add_order_by_constraint
+from swap.server.helpers import FieldElement, BlockFilter, felt, add_block_constraint, add_order_by_constraint
 
 
 @strawberry.type
@@ -45,12 +45,12 @@ class WhereFilterForToken:
     id_in: Optional[List[str]] = field(default_factory=list)
 
 async def get_tokens(
-    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc", where: Optional[WhereFilterForToken] = None
+    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc", block: Optional[BlockFilter] = None, where: Optional[WhereFilterForToken] = None
 ) -> List[Token]:
     db: Database = info.context["db"]
 
     query = dict()
-    add_block_constraint(query, None)
+    add_block_constraint(query, block)
 
     if where is not None:
         if where.id is not None:
