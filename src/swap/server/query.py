@@ -2,6 +2,7 @@ from typing import List
 
 import strawberry
 
+from swap.server.block import Block, get_blocks
 from swap.server.factory import Factory, get_factories
 from swap.server.liquidity_position import (LiquidityPosition,
                                                get_liquidity_positions)
@@ -18,6 +19,7 @@ from swap.server.aggregated import TokenDayData, get_token_day_datas
 
 @strawberry.type
 class Query:
+    blocks: List[Block] = strawberry.field(resolver=get_blocks)
     jediswap_factories: List[Factory] = strawberry.field(resolver=get_factories)
     tokens: List[Token] = strawberry.field(resolver=get_tokens)
     pairs: List[Pair] = strawberry.field(resolver=get_pairs)

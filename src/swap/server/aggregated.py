@@ -9,15 +9,6 @@ from pymongo.database import Database
 from strawberry.types import Info
 
 from swap.server.helpers import FieldElement, felt, add_block_constraint, add_order_by_constraint
-from swap.server.token import Token, get_token
-
-
-async def get_pair_token0(info: Info, root) -> Token:
-    return await get_token(info, root.token0_id)
-
-
-async def get_pair_token1(info: Info, root) -> Token:
-    return await get_token(info, root.token1_id)
 
 
 @strawberry.type

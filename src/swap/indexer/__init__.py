@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from apibara import EventFilter, Info, NewEvents
+from apibara import EventFilter, Info, NewEvents, NewBlock
 from apibara.indexer.runner import IndexerRunner, IndexerRunnerConfiguration
 from starknet_py.net.full_node_client import FullNodeClient
 from starknet_py.net.models import StarknetChainId
@@ -25,6 +25,19 @@ _event_to_handler = {
 }
 
 logger = get_logger(__name__)
+
+async def handle_block(info: Info, block: NewBlock):
+    # Store the block information in the database.
+    block = {
+        "number": block.new_head.number,
+        "hash": block.new_head.hash,
+        "parent_hash": block.new_head.parent_hash,
+        "timestamp": block.new_head.timestamp,
+    }
+    logger.info(
+        "handle block", block_number=block["number"], block_timestamp=block["timestamp"]
+    )
+    await info.storage.insert_one("blocks", block)
 
 
 async def handle_events(info: Info[IndexerContext], block_events: NewEvents):
@@ -69,6 +82,8 @@ async def run_indexer(stream_url, mongodb_url, rpc_url, indexer_id, restart):
         eth_price=Decimal("0"),
     )
     runner.set_context(context)
+
+    runner.add_block_handler(handle_block)
 
     # Add a filter on the factory to detect when pairs are created.
     runner.add_event_filters(
