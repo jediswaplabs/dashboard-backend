@@ -1,3 +1,4 @@
+from curses.ascii import US
 from typing import List
 
 import strawberry
@@ -8,6 +9,7 @@ from swap.server.liquidity_position import (LiquidityPosition,
                                                get_liquidity_positions)
 from swap.server.pair import Pair, get_pairs
 from swap.server.token import Token, get_tokens
+from swap.server.user import User, get_users
 from swap.server.transaction import Transaction, get_transactions
 from swap.server.transaction import Swap, get_swaps
 from swap.server.transaction import Mint, get_mints
@@ -23,6 +25,7 @@ class Query:
     jediswap_factories: List[Factory] = strawberry.field(resolver=get_factories)
     tokens: List[Token] = strawberry.field(resolver=get_tokens)
     pairs: List[Pair] = strawberry.field(resolver=get_pairs)
+    users: List[User] = strawberry.field(resolver=get_users)
     transactions: List[Transaction] = strawberry.field(resolver=get_transactions)
     swaps: List[Swap] = strawberry.field(resolver=get_swaps)
     mints: List[Mint] = strawberry.field(resolver=get_mints)

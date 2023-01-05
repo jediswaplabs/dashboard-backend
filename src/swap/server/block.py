@@ -30,6 +30,8 @@ class Block:
 @strawberry.input
 class WhereFilterForBlock:
     id: Optional[str] = None
+    timestamp_lt: Optional[int] = None
+    timestamp_gt: Optional[int] = None
 
 async def get_blocks(
     info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc", where: Optional[WhereFilterForBlock] = None
@@ -43,6 +45,12 @@ async def get_blocks(
         if where.id is not None:
             block_id = int(where.id, 16)
             query["hash"] = felt(block_id)
+        if where.timestamp_lt is not None:
+            timestamp_lt = datetime.fromtimestamp(where.timestamp_lt)
+            query["timestamp"] = {"$lt": timestamp_lt}
+        if where.timestamp_gt is not None:
+            timestamp_gt = datetime.fromtimestamp(where.timestamp_gt)
+            query["timestamp"] = {**query.get("timestamp", dict()), **{"$gt": timestamp_gt}}
 
     cursor = db["blocks"].find(query, skip=skip, limit=first)
     cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)

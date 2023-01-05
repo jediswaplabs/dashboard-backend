@@ -150,14 +150,21 @@ class Swap:
             amount_usd=data["amount_usd"].to_decimal(),
         )
 
+@strawberry.input
+class WhereFilterForTransaction:
+    id: Optional[FieldElement] = None
 
 async def get_transactions(
-    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc"
+    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc", where: Optional[WhereFilterForTransaction] = None
 ) -> List[Transaction]:
     db: Database = info.context["db"]
 
     query = dict()
     add_block_constraint(query, None)
+
+    if where is not None:
+        if where.id is not None:
+            query["hash"] = where.id
 
     cursor = db["transactions"].find(query, limit=first, skip=skip)
     cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)

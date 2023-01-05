@@ -8,15 +8,7 @@ from strawberry.types import Info
 
 from swap.server.helpers import (FieldElement, felt, add_block_constraint, add_order_by_constraint, serialize_hex)
 from swap.server.pair import Pair, get_pair
-
-
-@strawberry.type
-class User:
-    id: FieldElement
-
-    @strawberry.field
-    def liquidity_positions(self, info: Info) -> List["LiquidityPosition"]:
-        return []
+from swap.server.user import User, get_user
 
 
 @strawberry.type
@@ -39,8 +31,8 @@ class LiquidityPosition:
         )
 
     @strawberry.field
-    def user(self) -> User:
-        return User(id=self.user_id)
+    def user(self, info: Info) -> User:
+        return get_user(info, self.user_id)
 
     @strawberry.field
     def pair(self, info: Info) -> Pair:

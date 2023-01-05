@@ -16,7 +16,7 @@ from swap.indexer.daily import (snapshot_exchange_day_data,
                                    update_exchange_day_data,
                                    update_pair_day_data, update_pair_hour_data,
                                    update_token_day_data)
-from swap.indexer.helpers import (create_liquidity_snapshot, create_token,
+from swap.indexer.helpers import (create_liquidity_snapshot, find_or_create_user,
                                      create_transaction, felt,
                                      fetch_token_balance, price,
                                      replace_liquidity_position, to_decimal,
@@ -290,9 +290,7 @@ async def handle_sync(
 
     factory = await info.storage.find_one("factories", {"id": felt(jediswap_factory)})
 
-    total_liquidity_eth = (
-        factory["total_liquidity_eth"].to_decimal() + tracked_liquidity_eth
-    )
+    total_liquidity_eth = factory["total_liquidity_eth"].to_decimal() - old_pair["tracked_reserve_eth"].to_decimal() + tracked_liquidity_eth
     total_liquidity_usd = total_liquidity_eth * info.context.eth_price
 
     await info.storage.find_one_and_update(
@@ -370,6 +368,20 @@ async def handle_mint(
         },
     )
 
+    user = await find_or_create_user(info, mint["to"])
+
+    # update users data
+    await info.storage.find_one_and_update(
+        "users",
+        {"id": user["id"]},
+        {
+            "$inc": {
+                "transaction_count": 1,
+                "mint_count": 1,
+            }
+        },
+    )
+
     # update lp position
     await create_liquidity_snapshot(info, pair_address, mint["to"])
 
@@ -424,10 +436,6 @@ async def handle_burn(info: Info, header: BlockHeader, event: StarkNetEvent):
     token1 = await info.storage.find_one("tokens", {"id": pair["token1_id"]})
     assert token1 is not None
 
-    await info.storage.find_one_and_update(
-        "factories", {"id": felt(jediswap_factory)}, {"$inc": {"transaction_count": 1}}
-    )
-
     await update_transaction_count(info, jediswap_factory, pair_address, token0, token1)
 
     token0_amount = to_decimal(burn.amount0, token0["decimals"])
@@ -455,6 +463,20 @@ async def handle_burn(info: Info, header: BlockHeader, event: StarkNetEvent):
                 "amount1": Decimal128(token1_amount),
                 "log_index": event.log_index,
                 "amount_usd": Decimal128(amount_total_usd),
+            }
+        },
+    )
+
+    user = await find_or_create_user(info, burn["sender"])
+
+    # update users data
+    await info.storage.find_one_and_update(
+        "users",
+        {"id": user["id"]},
+        {
+            "$inc": {
+                "transaction_count": 1,
+                "burn_count": 1,
             }
         },
     )
@@ -524,6 +546,20 @@ async def handle_swap(
     amount0_total_usd = amount0_total_eth * info.context.eth_price
     amount1_total_eth = amount1_total * token1["derived_eth"].to_decimal()
     amount1_total_usd = amount1_total_eth * info.context.eth_price
+
+    user = await find_or_create_user(info, swap.to)
+
+    # update users data
+    await info.storage.find_one_and_update(
+        "users",
+        {"id": user["id"]},
+        {
+            "$inc": {
+                "transaction_count": 1,
+                "swap_count": 1,
+            }
+        },
+    )
 
     # update tokens data
     await info.storage.find_one_and_update(

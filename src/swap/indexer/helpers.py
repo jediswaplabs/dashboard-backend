@@ -77,6 +77,28 @@ async def create_transaction(info: Info[IndexerContext], transaction_hash: bytes
     await info.storage.insert_one("transactions", transaction)
     return transaction
 
+async def find_or_create_user(info: Info[IndexerContext], user_id: Union[int, bytes]):
+    
+    if isinstance(user_id, int):
+        user_id = felt(user_id)
+    
+    user = await info.storage.find_one(
+        "users", {"id": user_id}
+    )
+    if user is not None:
+        return user
+
+    user = {
+        "id": user_id,
+        "transaction_count": 0,
+        "swap_count": 0,
+        "mint_count": 0,
+        "burn_count": 0,
+    }
+
+    await info.storage.insert_one("users", user)
+    return user
+
 
 async def replace_liquidity_position(
     info: Info[IndexerContext], pair_address: int, user: int, balance: Decimal
