@@ -5,19 +5,11 @@ from dataclasses import field
 
 import strawberry
 from pymongo.database import Database
+from strawberry.dataloader import DataLoader
 from strawberry.types import Info
 
 from swap.server.helpers import FieldElement, BlockFilter, felt, add_block_constraint, add_order_by_constraint
-from swap.server.token import Token, get_token
-
-
-async def get_pair_token0(info: Info, root) -> Token:
-    return await get_token(info, root.token0_id)
-
-
-async def get_pair_token1(info: Info, root) -> Token:
-    return await get_token(info, root.token1_id)
-
+from swap.server.token import Token
 
 @strawberry.type
 class Pair:
@@ -39,10 +31,14 @@ class Pair:
     created_at_timestamp: datetime
 
     token0_id: strawberry.Private[FieldElement]
-    token0: Token = strawberry.field(resolver=get_pair_token0)
+    @strawberry.field
+    def token0(self, info: Info) -> Token:
+        return info.context["token_loader"].load(self.token0_id)
 
     token1_id: strawberry.Private[FieldElement]
-    token1: Token = strawberry.field(resolver=get_pair_token1)
+    @strawberry.field
+    def token1(self, info: Info) -> Token:
+        return info.context["token_loader"].load(self.token1_id)
 
     @classmethod
     def from_mongo(cls, data):
@@ -103,8 +99,8 @@ async def get_pairs(
     return [Pair.from_mongo(d) for d in cursor]
 
 
-def get_pair(info: Info, id: bytes) -> Pair:
-    db: Database = info.context["db"]
+def get_pair(db: Database, id: bytes) -> Pair:
+    # db: Database = info.context["db"]
 
     query = {"id": id}
     add_block_constraint(query, None)

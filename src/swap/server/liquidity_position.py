@@ -7,7 +7,7 @@ from pymongo.database import Database
 from strawberry.types import Info
 
 from swap.server.helpers import (FieldElement, felt, add_block_constraint, add_order_by_constraint, serialize_hex)
-from swap.server.pair import Pair, get_pair
+from swap.server.pair import Pair
 from swap.server.user import User, get_user
 
 
@@ -36,7 +36,7 @@ class LiquidityPosition:
 
     @strawberry.field
     def pair(self, info: Info) -> Pair:
-        return get_pair(info, self.pair_id)
+        return info.context["pair_loader"].load(self.pair_id)
 
 @strawberry.type
 class LiquidityPositionSnapshot:
@@ -77,7 +77,7 @@ class LiquidityPositionSnapshot:
 
     @strawberry.field
     def pair(self, info: Info) -> Pair:
-        return get_pair(info, self.pair_id)
+        return info.context["pair_loader"].load(self.pair_id)
 
 @strawberry.input
 class WhereFilterForLiquidityPosition:

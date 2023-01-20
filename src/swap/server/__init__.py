@@ -4,12 +4,20 @@ from typing import List, NewType, Optional
 
 import aiohttp_cors
 import strawberry
+from strawberry.dataloader import DataLoader
 from aiohttp import web
 from pymongo import MongoClient
 from strawberry.aiohttp.views import GraphQLView
 
 from swap.server.query import Query
+from swap.server.pair import Pair, get_pair
+from swap.server.token import Token, get_token
 
+async def load_tokens(db, keys) -> List[Token]:
+    return [get_token(db, key) for key in keys]
+
+async def load_pairs(db, keys) -> List[Pair]:
+    return [get_pair(db, key) for key in keys]
 
 class IndexerGraphQLView(GraphQLView):
     def __init__(self, db, **kwargs):
@@ -17,7 +25,9 @@ class IndexerGraphQLView(GraphQLView):
         self._db = db
 
     async def get_context(self, _request, _response):
-        return {"db": self._db}
+        return {"db": self._db, 
+                "token_loader": DataLoader(load_fn=lambda ids: load_tokens(self._db, ids)),
+                "pair_loader": DataLoader(load_fn=lambda ids: load_pairs(self._db, ids))}
 
 
 async def run_graphql_server(mongo_url, indexer_id):

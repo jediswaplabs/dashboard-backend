@@ -68,8 +68,8 @@ async def get_tokens(
     return [Token.from_mongo(d) for d in cursor]
 
 
-async def get_token(info: Info, id: bytes):
-    db: Database = info.context["db"]
+def get_token(db: Database, id: bytes) -> Token:
+    # db: Database = info.context["db"]
 
     query = {"id": id}
     add_block_constraint(query, None)

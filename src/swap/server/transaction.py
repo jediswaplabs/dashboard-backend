@@ -9,7 +9,7 @@ from pymongo.database import Database
 from strawberry.types import Info
 
 from swap.server.helpers import (FieldElement, felt, add_block_constraint, add_order_by_constraint, serialize_hex)
-from swap.server.pair import Pair, get_pair
+from swap.server.pair import Pair
 
 
 @strawberry.type
@@ -54,7 +54,7 @@ class Mint:
 
     @strawberry.field
     def pair(self, info: Info) -> Pair:
-        return get_pair(info, self.pair_id)
+        return info.context["pair_loader"].load(self.pair_id)
 
     @classmethod
     def from_mongo(cls, data):
@@ -92,7 +92,7 @@ class Burn:
     
     @strawberry.field
     def pair(self, info: Info) -> Pair:
-        return get_pair(info, self.pair_id)
+        return info.context["pair_loader"].load(self.pair_id)
 
     @classmethod
     def from_mongo(cls, data):
@@ -132,7 +132,7 @@ class Swap:
 
     @strawberry.field
     def pair(self, info: Info) -> Pair:
-        return get_pair(info, self.pair_id)
+        return info.context["pair_loader"].load(self.pair_id)
 
     @classmethod
     def from_mongo(cls, data):
