@@ -40,6 +40,8 @@ async def snapshot_pair_day_data(info: Info[IndexerContext], pair_address: int):
                     "reserve0": pair["reserve0"],
                     "reserve1": pair["reserve1"],
                     "reserve_usd": pair["reserve_usd"],
+                    "token0_price": pair["token0_price"],
+                    "token1_price": pair["token1_price"],
                 }
             }
         )
@@ -56,6 +58,8 @@ async def snapshot_pair_day_data(info: Info[IndexerContext], pair_address: int):
                 "reserve0": pair["reserve0"],
                 "reserve1": pair["reserve1"],
                 "reserve_usd": pair["reserve_usd"],
+                "token0_price": pair["token0_price"],
+                "token1_price": pair["token1_price"],
             }
         )
 
@@ -101,6 +105,8 @@ async def snapshot_pair_hour_data(info: Info[IndexerContext], pair_address: int)
                     "reserve0": pair["reserve0"],
                     "reserve1": pair["reserve1"],
                     "reserve_usd": pair["reserve_usd"],
+                    "token0_price": pair["token0_price"],
+                    "token1_price": pair["token1_price"],
                 }
             }
         )
@@ -117,6 +123,8 @@ async def snapshot_pair_hour_data(info: Info[IndexerContext], pair_address: int)
                 "reserve0": pair["reserve0"],
                 "reserve1": pair["reserve1"],
                 "reserve_usd": pair["reserve_usd"],
+                "token0_price": pair["token0_price"],
+                "token1_price": pair["token1_price"],
             }
         )
 

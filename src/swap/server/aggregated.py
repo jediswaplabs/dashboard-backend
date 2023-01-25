@@ -74,6 +74,8 @@ class PairDayData:
     daily_volume_usd: Decimal = strawberry.field(name="dailyVolumeUSD")
     total_supply: Decimal = strawberry.field(name="totalSupply")
     reserve_usd: Decimal = strawberry.field(name="reserveUSD")
+    token0_price: Decimal = strawberry.field(name="token0Price")
+    token1_price: Decimal = strawberry.field(name="token1Price")
 
     @classmethod
     def from_mongo(cls, data):
@@ -85,7 +87,9 @@ class PairDayData:
             daily_volume_token1=data.get("daily_volume_token1", Decimal128("0")).to_decimal(),
             daily_volume_usd=data.get("daily_volume_usd", Decimal128("0")).to_decimal(),
             total_supply=data["total_supply"].to_decimal(),
-            reserve_usd=data["reserve_usd"].to_decimal()
+            reserve_usd=data["reserve_usd"].to_decimal(),
+            token0_price=data.get("token0_price", Decimal128("0")).to_decimal(),
+            token1_price=data.get("token1_price", Decimal128("0")).to_decimal()
         )
 
 @strawberry.input
