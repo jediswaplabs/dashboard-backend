@@ -7,31 +7,57 @@ from bson import Decimal128
 from swap.indexer.context import IndexerContext
 from swap.indexer.helpers import felt
 
+from structlog import get_logger
+
+logger = get_logger(__name__)
+
 
 async def snapshot_pair_day_data(info: Info[IndexerContext], pair_address: int):
     pair = await info.storage.find_one("pairs", {"id": felt(pair_address)})
 
     day_id, day_start = _day_id(info)
 
-    await info.storage.find_one_and_replace(
-        "pair_day_data",
-        {
+    pair_day_data = await info.storage.find_one("pair_day_data", {
             "pair_id": felt(pair_address),
             "day_id": day_id,
-        },
-        {
-            "pair_id": felt(pair_address),
-            "day_id": day_id,
-            "date": day_start,
-            "token0_id": pair["token0_id"],
-            "token1_id": pair["token1_id"],
-            "total_supply": pair["total_supply"],
-            "reserve0": pair["reserve0"],
-            "reserve1": pair["reserve1"],
-            "reserve_usd": pair["reserve_usd"],
-        },
-        upsert=True,
-    )
+        })
+
+    if pair_day_data:
+        await info.storage.find_one_and_update(
+            "pair_day_data",
+            {
+                "pair_id": felt(pair_address),
+                "day_id": day_id,
+            },
+            {
+                "$set": {
+                    "pair_id": felt(pair_address),
+                    "day_id": day_id,
+                    "date": day_start,
+                    "token0_id": pair["token0_id"],
+                    "token1_id": pair["token1_id"],
+                    "total_supply": pair["total_supply"],
+                    "reserve0": pair["reserve0"],
+                    "reserve1": pair["reserve1"],
+                    "reserve_usd": pair["reserve_usd"],
+                }
+            }
+        )
+    else:
+        await info.storage.insert_one(
+            "pair_day_data",
+            {
+                "pair_id": felt(pair_address),
+                "day_id": day_id,
+                "date": day_start,
+                "token0_id": pair["token0_id"],
+                "token1_id": pair["token1_id"],
+                "total_supply": pair["total_supply"],
+                "reserve0": pair["reserve0"],
+                "reserve1": pair["reserve1"],
+                "reserve_usd": pair["reserve_usd"],
+            }
+        )
 
 
 async def update_pair_day_data(info: Info[IndexerContext], pair_address: int, update):
@@ -52,25 +78,47 @@ async def snapshot_pair_hour_data(info: Info[IndexerContext], pair_address: int)
 
     hour_id, hour_start = _hour_id(info)
 
-    await info.storage.find_one_and_replace(
-        "pair_hour_data",
-        {
+    pair_hour_data = await info.storage.find_one("pair_hour_data", {
             "pair_id": felt(pair_address),
             "hour_id": hour_id,
-        },
-        {
-            "pair_id": felt(pair_address),
-            "hour_id": hour_id,
-            "date": hour_start,
-            "token0_id": pair["token0_id"],
-            "token1_id": pair["token1_id"],
-            "total_supply": pair["total_supply"],
-            "reserve0": pair["reserve0"],
-            "reserve1": pair["reserve1"],
-            "reserve_usd": pair["reserve_usd"],
-        },
-        upsert=True,
-    )
+        })
+
+    if pair_hour_data:
+        await info.storage.find_one_and_update(
+            "pair_hour_data",
+            {
+                "pair_id": felt(pair_address),
+                "hour_id": hour_id,
+            },
+            {
+                "$set": {
+                    "pair_id": felt(pair_address),
+                    "hour_id": hour_id,
+                    "date": hour_start,
+                    "token0_id": pair["token0_id"],
+                    "token1_id": pair["token1_id"],
+                    "total_supply": pair["total_supply"],
+                    "reserve0": pair["reserve0"],
+                    "reserve1": pair["reserve1"],
+                    "reserve_usd": pair["reserve_usd"],
+                }
+            }
+        )
+    else:
+        await info.storage.insert_one(
+            "pair_hour_data",
+            {
+                "pair_id": felt(pair_address),
+                "hour_id": hour_id,
+                "date": hour_start,
+                "token0_id": pair["token0_id"],
+                "token1_id": pair["token1_id"],
+                "total_supply": pair["total_supply"],
+                "reserve0": pair["reserve0"],
+                "reserve1": pair["reserve1"],
+                "reserve_usd": pair["reserve_usd"],
+            }
+        )
 
 
 async def update_pair_hour_data(info: Info[IndexerContext], pair_address: int, update):
@@ -91,28 +139,50 @@ async def snapshot_exchange_day_data(info: Info[IndexerContext], address: int):
 
     day_id, day_start = _day_id(info)
 
-    await info.storage.find_one_and_replace(
-        "exchange_day_data",
-        {
+    exchange_day_data = await info.storage.find_one("exchange_day_data", {
             "address": felt(address),
             "day_id": day_id,
-        },
-        {
-            "address": felt(address),
-            "day_id": day_id,
-            "date": day_start,
-            "total_volume_usd": exchange["total_volume_usd"],
-            "total_volume_eth": exchange["total_volume_eth"],
-            "total_liquidity_usd": exchange["total_liquidity_usd"],
-            "total_liquidity_eth": exchange["total_liquidity_eth"],
-            "transaction_count": exchange["transaction_count"],
-        },
-        upsert=True,
-    )
+        })
+
+    if exchange_day_data:
+        await info.storage.find_one_and_update(
+            "exchange_day_data",
+            {
+                "address": felt(address),
+                "day_id": day_id,
+            },
+            {
+                "$set": {
+                    "address": felt(address),
+                    "day_id": day_id,
+                    "date": day_start,
+                    "total_volume_usd": exchange["total_volume_usd"],
+                    "total_volume_eth": exchange["total_volume_eth"],
+                    "total_liquidity_usd": exchange["total_liquidity_usd"],
+                    "total_liquidity_eth": exchange["total_liquidity_eth"],
+                    "transaction_count": exchange["transaction_count"],
+                }
+            }
+        )
+    else:
+        await info.storage.insert_one(
+            "exchange_day_data",
+            {
+                "address": felt(address),
+                "day_id": day_id,
+                "date": day_start,
+                "total_volume_usd": exchange["total_volume_usd"],
+                "total_volume_eth": exchange["total_volume_eth"],
+                "total_liquidity_usd": exchange["total_liquidity_usd"],
+                "total_liquidity_eth": exchange["total_liquidity_eth"],
+                "transaction_count": exchange["transaction_count"],
+            }
+        )
 
 
 async def update_exchange_day_data(info: Info[IndexerContext], address: int, update):
     day_id, _day_start = _day_id(info)
+
     await info.storage.find_one_and_update(
         "exchange_day_data",
         {
@@ -138,23 +208,43 @@ async def snapshot_token_day_data(
     total_liquidity_eth = total_liquidity_token * token["derived_eth"].to_decimal()
     total_liquidity_usd = total_liquidity_eth * info.context.eth_price
 
-    await info.storage.find_one_and_replace(
-        "token_day_data",
-        {
+    token_day_data = await info.storage.find_one("token_day_data", {
             "token_id": token_address,
             "day_id": day_id,
-        },
-        {
-            "token_id": token_address,
-            "day_id": day_id,
-            "date": day_start,
-            "price_usd": Decimal128(price_usd),
-            "total_liquidity_token": Decimal128(total_liquidity_token),
-            "total_liquidity_eth": Decimal128(total_liquidity_eth),
-            "total_liquidity_usd": Decimal128(total_liquidity_usd),
-        },
-        upsert=True,
-    )
+        })
+
+    if token_day_data:
+        await info.storage.find_one_and_update(
+            "token_day_data",
+            {
+                "token_id": token_address,
+                "day_id": day_id,
+            },
+            {
+                "$set": {
+                    "token_id": token_address,
+                    "day_id": day_id,
+                    "date": day_start,
+                    "price_usd": Decimal128(price_usd),
+                    "total_liquidity_token": Decimal128(total_liquidity_token),
+                    "total_liquidity_eth": Decimal128(total_liquidity_eth),
+                    "total_liquidity_usd": Decimal128(total_liquidity_usd),
+                }
+            }
+        )
+    else:
+        await info.storage.insert_one(
+            "token_day_data",
+            {
+                "token_id": token_address,
+                "day_id": day_id,
+                "date": day_start,
+                "price_usd": Decimal128(price_usd),
+                "total_liquidity_token": Decimal128(total_liquidity_token),
+                "total_liquidity_eth": Decimal128(total_liquidity_eth),
+                "total_liquidity_usd": Decimal128(total_liquidity_usd),
+            }
+        )
 
 
 async def update_token_day_data(
