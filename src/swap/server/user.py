@@ -63,4 +63,13 @@ def get_user(info: Info, id: bytes) -> User:
     add_block_constraint(query, None)
 
     pair = db["users"].find_one(query)
-    return User.from_mongo(pair)
+    if pair:
+        return User.from_mongo(pair)
+    else:
+        return User(
+            id=id, 
+            transaction_count=0,
+            mint_count=0,
+            burn_count=0,
+            swap_count=0
+            )
