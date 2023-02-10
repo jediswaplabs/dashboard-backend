@@ -47,6 +47,7 @@ class Mint:
     amount0: Decimal
     amount1: Decimal
     amount_usd: Decimal = strawberry.field(name="amountUSD")
+    zap_in: bool
 
     @strawberry.field
     def id(self) -> str:
@@ -69,6 +70,7 @@ class Mint:
             amount0=data["amount0"].to_decimal(),
             amount1=data["amount1"].to_decimal(),
             amount_usd=data["amount_usd"].to_decimal(),
+            zap_in=data.get("zap_in", False),
         )
 
 
