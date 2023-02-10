@@ -15,6 +15,8 @@ jediswap_factory = int(
     "0x00dad44c139a476c7a17fc8141e6db680e9abc9f56fe249a105094c44382c2fd", 16
 )
 
+zap_in_addresses = [int("0x029a303b928b9391ce797ec27d011d3937054bee783ca7831df792bae00c925c", 16)]
+
 index_from_block = 10_760
 
 _eth = int("049d36570d4e46f48e99674bd3fcc84644ddd6b96f7c741b1562b82f9e004dc7", 16)

@@ -23,7 +23,7 @@ from swap.indexer.helpers import (create_liquidity_snapshot, find_or_create_user
                                      update_transaction_count)
 from swap.indexer.jediswap import (find_eth_per_token,
                                       get_tracked_liquidity_usd,
-                                      get_tracked_volume_usd, jediswap_factory)
+                                      get_tracked_volume_usd, jediswap_factory, zap_in_addresses)
 
 logger = get_logger(__name__)
 
@@ -71,6 +71,33 @@ async def handle_transfer(
                 "timestamp": info.context.block_timestamp,
             }
             await info.storage.insert_one("mints", mint)
+    elif transfer.from_ in zap_in_addresses:
+            # update latest mint
+            logger.info("transfer is zapper")
+            mints = await info.storage.find(
+                "mints",
+                {
+                    "pair_id": felt(pair_address),
+                    "transaction_hash": event.transaction_hash,
+                },
+                sort={"index": 1},
+            )
+            mints = list(mints)
+            assert mints
+            await info.storage.find_one_and_update(
+                "mints",
+                {
+                    "pair_id": felt(pair_address),
+                    "transaction_hash": event.transaction_hash,
+                    "index": len(mints) - 1,
+                },
+                {
+                    "$set": {
+                        "to": felt(transfer.to),
+                        "zap_in": True
+                    }
+                },
+            )
 
     if transfer.to == pair_address:
         logger.info("transfer is burn (direct)")
