@@ -44,6 +44,7 @@ class LiquidityPositionSnapshot:
     pair_id: strawberry.Private[FieldElement]
 
     timestamp: datetime
+    block: int
     reserve_usd: Decimal
     token0_price_usd: Decimal
     token1_price_usd: Decimal
@@ -62,6 +63,7 @@ class LiquidityPositionSnapshot:
             pair_id=data["pair_address"],
             user_id=data["user"],
             timestamp=data["timestamp"],
+            block=data["block"],
             reserve_usd=data["reserve_usd"].to_decimal(),
             token0_price_usd=data["token0_price_usd"].to_decimal(),
             token1_price_usd=data["token1_price_usd"].to_decimal(),
