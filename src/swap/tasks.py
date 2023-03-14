@@ -155,7 +155,6 @@ def lp_contest_each_user(user: str, latest_block_number: int):
     liquidity_position_snapshots = [LiquidityPositionSnapshot.from_mongo(d) for d in cursor]
     total_contest_value = 0
     is_eligible = False
-    is_lp_value_eligible = False
     total_blocks_eligible = 0
     for (i, lps) in enumerate(liquidity_position_snapshots):
         this_block_number = lps.block
@@ -165,7 +164,6 @@ def lp_contest_each_user(user: str, latest_block_number: int):
                 continue
         contest_value_contribution = last_lp_value_total * (this_block_number - last_block_number)
         if last_lp_value_total > min_lp_value:
-            is_lp_value_eligible = True
             total_blocks_eligible = total_blocks_eligible + this_block_number - last_block_number
             if total_blocks_eligible > min_blocks:
                 is_eligible = True
@@ -177,6 +175,10 @@ def lp_contest_each_user(user: str, latest_block_number: int):
         print(last_block_number, total_contest_value, is_eligible)
     print(last_lp_values, last_lp_value_total)
     contest_value_contribution = last_lp_value_total * (latest_block_number - last_block_number)
+    if last_lp_value_total > min_lp_value:
+        total_blocks_eligible = total_blocks_eligible + latest_block_number - last_block_number
+        if total_blocks_eligible > min_blocks:
+            is_eligible = True
     total_contest_value = total_contest_value + contest_value_contribution
     print(latest_block_number, total_contest_value, is_eligible)
     db["lp_contest_234567_block"].insert_one(
