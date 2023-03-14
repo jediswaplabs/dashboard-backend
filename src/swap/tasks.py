@@ -1,3 +1,4 @@
+from decimal import Decimal
 from celery import Celery
 from swap.indexer.helpers import felt
 from bson import Decimal128
@@ -65,7 +66,7 @@ def lp_contest_for_block(block: int):
     users = [d for d in cursor]
     print(len(users))
     from swap.server.helpers import serialize_hex
-    for user in users[:4]:
+    for user in users:
         lp_contest_each_user.apply_async(args=[serialize_hex(user), block])
     set_in_redis("last_block_done", block)
 
@@ -117,7 +118,7 @@ def lp_contest_each_user(user: str, latest_block_number: int):
             if lps.liquidity_token_balance != 0:
                 query = dict()
                 query["pair_id"] = lps.pair_id
-                query["hour_id"] = contest_start_hour_id
+                query["hour_id"] = {"$lte": contest_start_hour_id}
                 cursor = db["pair_hour_data"].find(query, limit=1)
                 cursor = add_order_by_constraint(cursor, "reserve_usd", "desc")
                 pair_hour_data = [d for d in cursor][0]
@@ -181,6 +182,8 @@ def lp_contest_each_user(user: str, latest_block_number: int):
             is_eligible = True
     total_contest_value = total_contest_value + contest_value_contribution
     print(latest_block_number, total_contest_value, is_eligible)
+    if total_contest_value == 0:
+        total_contest_value = Decimal(0)
     db["lp_contest_234567_block"].insert_one(
             {
                 "user": user,
