@@ -1,6 +1,7 @@
 from celery import Celery
 from swap.indexer.helpers import felt
 from bson import Decimal128
+from pymongo import MongoClient
 import redis
 import os
 import sys
@@ -51,8 +52,21 @@ def lp_contest_for_block(block: int):
             pass
         else:
             return "Already done"
-    for user in ["0x079c5ad787a073612b84609637e4eaeff54968d4617f023e6914e1750bbd1d6e", "0x01b3c9ba30910ba7a653cb08754d30e58847380b4ff886ab7938aa512948e11c", "0x005318681fc3f1a775b781d4fc2937a3a2663845631b2c0b4324f2005ad71aba"]:
-        lp_contest_each_user.apply_async(args=[user, block])
+    indexer_id = "jediswap-testnet"
+    mongo_url = os.environ.get('MONGO_URL', None)
+    if mongo_url is None:
+        sys.exit("MONGO_URL not set")
+    mongo = MongoClient(mongo_url)
+    db_name = indexer_id.replace("-", "_")
+    db = mongo[db_name]
+    query = dict()
+    query["block"] = {"$lte": block}
+    cursor = db["liquidity_position_snapshots"].distinct("user", query)
+    users = [d for d in cursor]
+    print(len(users))
+    from swap.server.helpers import serialize_hex
+    for user in users[:4]:
+        lp_contest_each_user.apply_async(args=[serialize_hex(user), block])
     set_in_redis("last_block_done", block)
 
 @app.task
@@ -62,7 +76,6 @@ def lp_contest_each_user(user: str, latest_block_number: int):
     mongo_url = os.environ.get('MONGO_URL', None)
     if mongo_url is None:
         sys.exit("MONGO_URL not set")
-    from pymongo import MongoClient
     mongo = MongoClient(mongo_url)
     db_name = indexer_id.replace("-", "_")
     db = mongo[db_name]
