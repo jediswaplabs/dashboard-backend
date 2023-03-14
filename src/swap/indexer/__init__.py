@@ -37,6 +37,9 @@ async def handle_block(info: Info, block: NewBlock):
     logger.info(
         "handle block", block_number=block["number"], block_timestamp=block["timestamp"]
     )
+    
+    from src.swap.tasks import lp_contest_for_block
+    lp_contest_for_block.apply_async(args=[block["number"] - 1])
     await info.storage.insert_one("blocks", block)
 
 
