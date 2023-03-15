@@ -38,8 +38,9 @@ async def handle_block(info: Info, block: NewBlock):
         "handle block", block_number=block["number"], block_timestamp=block["timestamp"]
     )
     
-    from swap.tasks import lp_contest_for_block
-    lp_contest_for_block.apply_async(args=[block["number"] - 1])
+    from swap.tasks import lp_contest_for_block, contest_start_block, contest_end_block
+    if contest_start_block <= (block["number"] - 1) <= contest_end_block:
+        lp_contest_for_block.apply_async(args=[block["number"] - 1])
     await info.storage.insert_one("blocks", block)
 
 
