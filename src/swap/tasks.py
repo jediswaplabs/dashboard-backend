@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal
 from celery import Celery
 from swap.indexer.helpers import felt
@@ -65,13 +66,19 @@ def lp_contest_for_block(block: int):
     cursor = db["liquidity_position_snapshots"].distinct("user", query)
     users = [d for d in cursor]
     print(len(users))
+    query = dict()
+    query["number"] = block
+    cursor = db["blocks"].find(query, limit=1)
+    from swap.server.block import Block
+    returned_block = [Block.from_mongo(d) for d in cursor][0]
+    block_timestamp = returned_block.timestamp
     from swap.server.helpers import serialize_hex
     for user in users:
-        lp_contest_each_user.apply_async(args=[serialize_hex(user), block])
+        lp_contest_each_user.apply_async(args=[serialize_hex(user), block, block_timestamp])
     set_in_redis("last_block_done", block)
 
 @app.task
-def lp_contest_each_user(user: str, latest_block_number: int):
+def lp_contest_each_user(user: str, latest_block_number: int, latest_block_timestamp: datetime):
     indexer_id = "jediswap-testnet"
     user = felt(int(user, 16))
     mongo_url = os.environ.get('MONGO_URL', None)
@@ -181,24 +188,27 @@ def lp_contest_each_user(user: str, latest_block_number: int):
         if total_blocks_eligible > min_blocks:
             is_eligible = True
     total_contest_value = total_contest_value + contest_value_contribution
-    print(latest_block_number, total_contest_value, is_eligible)
+    print(latest_block_number, latest_block_timestamp, total_contest_value, is_eligible)
     if total_contest_value == 0:
         total_contest_value = Decimal(0)
-    db["lp_contest_234567_block"].insert_one(
+    latest_block_timestamp = datetime.fromisoformat(latest_block_timestamp)
+    db["lp_contest_1234567812_block"].insert_one(
             {
                 "user": user,
                 "block": latest_block_number,
+                "timestamp": latest_block_timestamp,
                 "contest_value": Decimal128(total_contest_value),
                 "is_eligible": is_eligible
             }
         )
-    db["lp_contest_234567"].find_one_and_replace(
+    db["lp_contest_1234567812"].find_one_and_replace(
             {
                 "user": user,
             },
             {
                 "user": user,
                 "block": latest_block_number,
+                "timestamp": latest_block_timestamp,
                 "contest_value": Decimal128(total_contest_value),
                 "is_eligible": is_eligible
             },

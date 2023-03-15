@@ -1,6 +1,7 @@
 from decimal import Decimal
 from typing import List, Optional
 from dataclasses import field
+from datetime import datetime
 
 import strawberry
 from pymongo.database import Database
@@ -15,6 +16,7 @@ class LPContest:
     
     user_id: strawberry.Private[FieldElement]
     block: int
+    timestamp: datetime
     contest_value: Decimal
     is_eligible: bool
 
@@ -27,6 +29,7 @@ class LPContest:
         return cls(
             user_id=data["user"],
             block=data["block"],
+            timestamp=data["timestamp"],
             contest_value=data["contest_value"],
             is_eligible=data["is_eligible"]
         )
@@ -42,7 +45,7 @@ async def get_lp_contest(
 
     query = dict()
 
-    cursor = db["lp_contest_234567"].find(query, skip=skip, limit=first)
+    cursor = db["lp_contest_1234567812"].find(query, skip=skip, limit=first)
     cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
 
     return [LPContest.from_mongo(d) for d in cursor]
@@ -59,7 +62,7 @@ async def get_lp_contest_block(
             user = int(where.user, 16)
             query["user"] = felt(user)
 
-    cursor = db["lp_contest_234567_block"].find(query, skip=skip, limit=first)
+    cursor = db["lp_contest_1234567812_block"].find(query, skip=skip, limit=first)
     cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
 
     return [LPContest.from_mongo(d) for d in cursor]
