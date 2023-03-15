@@ -1,6 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 from celery import Celery
+from kombu import Queue, Exchange
 from swap.indexer.helpers import felt
 from bson import Decimal128
 from pymongo import MongoClient
@@ -13,7 +14,11 @@ import sys
 redis_url = os.environ.get('REDIS_URL', None)
 if redis_url is None:
     sys.exit("REDIS_URL not set")
+
 app = Celery('tasks', broker=redis_url)
+app.conf.task_queues = (
+    Queue(f"{db_name_for_contest}_queue"),
+)
 
 indexer_id = "jediswap-testnet"
 
@@ -83,7 +88,7 @@ def lp_contest_for_block(latest_block_number: int):
     # print(len(users))
     from swap.server.helpers import serialize_hex
     for user in users:
-        lp_contest_each_user.apply_async(args=[serialize_hex(user), latest_block_number, latest_block_timestamp])
+        lp_contest_each_user.apply_async(args=[serialize_hex(user), latest_block_number, latest_block_timestamp], queue=f"{db_name_for_contest}_queue")
     set_in_redis(f"{db_name_for_contest}_last_block_done", latest_block_number)
 
 def update_pair_cumulative_price(pair_address: str, latest_block_number: int):
