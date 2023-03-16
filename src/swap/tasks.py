@@ -7,6 +7,7 @@ from bson import Decimal128
 from pymongo import MongoClient
 from swap.server.helpers import add_order_by_constraint
 from swap.server.lp_contest import db_name_for_contest, contest_start_block, contest_end_block
+from swap.main import indexer_id
 import redis
 import os
 import sys
@@ -20,7 +21,6 @@ app.conf.task_queues = (
     Queue(f"{db_name_for_contest}_queue"),
 )
 
-indexer_id = "jediswap-testnet"
 
 def get_redis_connection():
     connection = redis.from_url(redis_url, 
