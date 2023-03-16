@@ -6,7 +6,7 @@ from swap.indexer.helpers import felt
 from bson import Decimal128
 from pymongo import MongoClient
 from swap.server.helpers import add_order_by_constraint
-from swap.server.lp_contest import db_name_for_contest, contest_start_block
+from swap.server.lp_contest import db_name_for_contest, contest_start_block, contest_end_block
 from swap.main import indexer_id
 import redis
 import os
