@@ -47,7 +47,7 @@ poetry run swap-indexer indexer
 
 where you need to set following environment variables:
 
- * `STREAM_URL`: the Apibara stream, should be `mainnet.starknet.stream.apibara.com`.
+ * `SERVER_URL`: the Apibara server, should be `mainnet.starknet.a5a.ch`.
  * `MONGO_URL`: mongodb connection url. If you use the provided docker compose file use `mongodb://apibara:apibara@localhost:27017`.
  * `RPC_URL`: the StarkNet RPC url. You can use Infura for this.
 

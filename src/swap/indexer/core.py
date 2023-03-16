@@ -1,6 +1,6 @@
 from decimal import Decimal
 
-from apibara import EventFilter, Info
+from apibara import Info
 from apibara.model import BlockHeader, StarkNetEvent
 from bson import Decimal128
 from more_itertools import pairwise
