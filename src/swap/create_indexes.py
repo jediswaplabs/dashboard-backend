@@ -42,3 +42,7 @@ db["pair_hour_data"].create_index([("_chain.valid_from", ASCENDING)])
 db["users"].create_index([("id", ASCENDING), ("_chain.valid_to", ASCENDING)])
 
 db["liquidity_position_snapshots"].create_index([("block", ASCENDING)])
+
+db["transactions"].create_index([("hash", ASCENDING), ("_chain.valid_to", ASCENDING)])
+
+db["swaps"].create_index([("to", ASCENDING), ("_chain.valid_to", ASCENDING)])
