@@ -1,5 +1,5 @@
 import os
-from pymongo import MongoClient, ASCENDING
+from pymongo import MongoClient, ASCENDING, DESCENDING
 from swap.main import indexer_id
 from swap.server.lp_contest import db_name_for_contest
 
@@ -48,20 +48,26 @@ db["pair_hour_data"].create_index([("_chain.valid_to", ASCENDING)])
 db["pair_hour_data"].create_index([("_chain.valid_from", ASCENDING)])
 
 db["users"].create_index([("id", ASCENDING), ("_chain.valid_to", ASCENDING)])
+db["users"].create_index([("_chain.valid_to", ASCENDING)])
 db["users"].create_index([("_chain.valid_from", ASCENDING)])
 
 db["liquidity_position_snapshots"].create_index([("block", ASCENDING)])
 db["liquidity_position_snapshots"].create_index([("user", ASCENDING), ("block", ASCENDING)])
 db["liquidity_position_snapshots"].create_index([("user", ASCENDING), ("block", ASCENDING), ("pair_address", ASCENDING)])
+db["liquidity_position_snapshots"].create_index([("_chain.valid_to", ASCENDING)])
+db["liquidity_position_snapshots"].create_index([("_chain.valid_from", ASCENDING)])
 
 db["transactions"].create_index([("hash", ASCENDING), ("_chain.valid_to", ASCENDING)])
 db["transactions"].create_index([("_chain.valid_to", ASCENDING)])
+db["transactions"].create_index([("_chain.valid_from", ASCENDING)])
+db["transactions"].create_index([("_chain.valid_to", ASCENDING), ("block_timestamp", DESCENDING)])
 
 db["swaps"].create_index([("to", ASCENDING), ("_chain.valid_to", ASCENDING)])
 db["swaps"].create_index([("transaction_hash", ASCENDING), ("_chain.valid_to", ASCENDING)])
 db["swaps"].create_index([("pair_id", ASCENDING), ("_chain.valid_to", ASCENDING)])
 db["swaps"].create_index([("pair_id", ASCENDING), ("transaction_hash", ASCENDING), ("_chain.valid_to", ASCENDING)])
 db["swaps"].create_index([("_chain.valid_to", ASCENDING)])
+db["swaps"].create_index([("_chain.valid_from", ASCENDING)])
 
 db["mints"].create_index([("transaction_hash", ASCENDING), ("_chain.valid_to", ASCENDING)])
 db["mints"].create_index([("pair_id", ASCENDING), ("_chain.valid_to", ASCENDING)])
