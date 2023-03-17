@@ -63,7 +63,7 @@ class Mint:
             timestamp=data["timestamp"],
             index=data["index"],
             pair_id=data["pair_id"],
-            sender=data["sender"],
+            sender=data.get("sender", felt(0)),
             to=data["to"],
             liquidity=data["liquidity"].to_decimal(),
             amount0=data["amount0"].to_decimal(),
