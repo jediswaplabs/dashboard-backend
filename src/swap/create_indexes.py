@@ -23,8 +23,11 @@ db["token_day_data"].create_index([("token_id", ASCENDING), ("day_id", ASCENDING
 db["token_day_data"].create_index([("_chain.valid_to", ASCENDING)])
 db["token_day_data"].create_index([("_chain.valid_from", ASCENDING)])
 
+db[f"{db_name_for_contest}"].create_index([("user", ASCENDING)])
+
 db[f"{db_name_for_contest}_block"].create_index([("_chain.valid_from", ASCENDING)])
 db[f"{db_name_for_contest}_block"].create_index([("_chain.valid_to", ASCENDING)])
+db[f"{db_name_for_contest}_block"].create_index([("user", ASCENDING)])
 
 db["exchange_day_data"].create_index([("address", ASCENDING), ("day_id", ASCENDING), ("_chain.valid_to", ASCENDING)])
 db["exchange_day_data"].create_index([("_chain.valid_to", ASCENDING)])
