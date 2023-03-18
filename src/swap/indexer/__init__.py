@@ -37,7 +37,7 @@ class JediSwapIndexer(StarkNetIndexer):
         # Return initial configuration of the indexer.
         return IndexerConfiguration(
             filter=Filter()
-            .with_header(weak=True)
+            .with_header(weak=False)
             .add_event(
                 EventFilter()
                 .with_from_address(FACTORY_ADDRESS)

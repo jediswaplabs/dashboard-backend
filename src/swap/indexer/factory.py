@@ -87,7 +87,7 @@ async def handle_pair_created(indexer, info: Info, header: BlockHeader, event: E
     pair_address_felt = felt.from_int(pair_created.pair)
     indexer.update_filter(
             Filter()
-            .with_header(weak=True)
+            .with_header(weak=False)
             .add_event(
                 EventFilter().with_from_address(pair_address_felt).with_keys([TRANSFER_KEY])
             )

@@ -438,8 +438,6 @@ async def handle_burn(info: Info, event: Event, transaction_hash: str):
     if transaction is None:
         return
 
-    print(transaction_hash)
-
     burns = await info.storage.find(
         "burns",
         {
