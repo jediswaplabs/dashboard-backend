@@ -13,7 +13,7 @@ import sys
 logger = get_logger(__name__)
 
 
-indexer_id = "jediswap-testnet"
+indexer_id = "jediswap-mainnet-6"
 
 
 def async_command(f):

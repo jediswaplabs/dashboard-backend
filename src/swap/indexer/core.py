@@ -1,7 +1,8 @@
 from decimal import Decimal
 
-from apibara import Info
-from apibara.model import BlockHeader, StarkNetEvent
+from apibara.indexer import Info
+from apibara.starknet import felt
+from apibara.starknet.proto.starknet_pb2 import BlockHeader, Event
 from bson import Decimal128
 from more_itertools import pairwise
 from structlog import get_logger
@@ -17,7 +18,7 @@ from swap.indexer.daily import (snapshot_exchange_day_data,
                                    update_pair_day_data, update_pair_hour_data,
                                    update_token_day_data)
 from swap.indexer.helpers import (create_liquidity_snapshot, find_or_create_user,
-                                     create_transaction, felt,
+                                     create_transaction,
                                      fetch_token_balance, price,
                                      replace_liquidity_position, to_decimal,
                                      update_transaction_count)
@@ -28,24 +29,23 @@ from swap.indexer.jediswap import (find_eth_per_token,
 logger = get_logger(__name__)
 
 
-async def handle_transfer(
-    info: Info[IndexerContext], header: BlockHeader, event: StarkNetEvent
-):
+async def handle_transfer(info: Info, event: Event, transaction_hash: str):
     transfer = decode_event(transfer_decoder, event.data)
-    pair_address = int.from_bytes(event.address, "big")
+    pair_address_int = felt.to_int(event.from_address)
+    pair_address = hex(pair_address_int)
     logger.info("handle Transfer", **transfer._asdict())
     if transfer.from_ == 0 and transfer.to == 1 and transfer.value == 1000:
         return
 
     value = to_decimal(transfer.value, 18)
-    await create_transaction(info, event.transaction_hash)
+    await create_transaction(info, transaction_hash)
 
     # mints
     mints = await info.storage.find(
         "mints",
         {
-            "pair_id": felt(pair_address),
-            "transaction_hash": event.transaction_hash,
+            "pair_id": pair_address,
+            "transaction_hash": transaction_hash,
         },
     )
     mints = list(mints)
@@ -56,17 +56,17 @@ async def handle_transfer(
         # update total supply
         await info.storage.find_one_and_update(
             "pairs",
-            {"id": felt(pair_address)},
+            {"id": pair_address},
             {"$inc": {"total_supply": Decimal128(value)}},
         )
 
         # create new mint if no mints so far or if last one is done already
         if not mints or _is_complete_mint(mints[-1]):
             mint = {
-                "transaction_hash": event.transaction_hash,
+                "transaction_hash": transaction_hash,
                 "index": len(mints),
-                "pair_id": felt(pair_address),
-                "to": felt(transfer.to),
+                "pair_id": pair_address,
+                "to": hex(transfer.to),
                 "liquidity": Decimal128(value),
                 "timestamp": info.context.block_timestamp,
             }
@@ -77,8 +77,8 @@ async def handle_transfer(
             mints = await info.storage.find(
                 "mints",
                 {
-                    "pair_id": felt(pair_address),
-                    "transaction_hash": event.transaction_hash,
+                    "pair_id": pair_address,
+                    "transaction_hash": transaction_hash,
                 },
                 sort={"index": 1},
             )
@@ -87,36 +87,36 @@ async def handle_transfer(
             await info.storage.find_one_and_update(
                 "mints",
                 {
-                    "pair_id": felt(pair_address),
-                    "transaction_hash": event.transaction_hash,
+                    "pair_id": pair_address,
+                    "transaction_hash": transaction_hash,
                     "index": len(mints) - 1,
                 },
                 {
                     "$set": {
-                        "to": felt(transfer.to),
+                        "to": hex(transfer.to),
                         "zap_in": True
                     }
                 },
             )
 
-    if transfer.to == pair_address:
+    if transfer.to == pair_address_int:
         logger.info("transfer is burn (direct)")
         # send directly to pair
         burns = await info.storage.find(
             "burns",
             {
-                "pair_id": felt(pair_address),
-                "transaction_hash": event.transaction_hash,
+                "pair_id": pair_address,
+                "transaction_hash": transaction_hash,
             },
         )
         burns = list(burns)
 
         burn = {
-            "transaction_hash": event.transaction_hash,
+            "transaction_hash": transaction_hash,
             "index": len(burns),
-            "pair_id": felt(pair_address),
-            "sender": felt(transfer.from_),
-            "to": felt(transfer.to),
+            "pair_id": pair_address,
+            "sender": hex(transfer.from_),
+            "to": hex(transfer.to),
             "liquidity": Decimal128(value),
             "timestamp": info.context.block_timestamp,
             "needs_complete": True,
@@ -124,21 +124,21 @@ async def handle_transfer(
         await info.storage.insert_one("burns", burn)
 
     # burns
-    if transfer.to == 0 and transfer.from_ == pair_address:
+    if transfer.to == 0 and transfer.from_ == pair_address_int:
         logger.info("transfer is a burn")
 
         # update total supply
         await info.storage.find_one_and_update(
             "pairs",
-            {"id": felt(pair_address)},
+            {"id": pair_address},
             {"$inc": {"total_supply": Decimal128(-value)}},
         )
 
         burns = await info.storage.find(
             "burns",
             {
-                "pair_id": felt(pair_address),
-                "transaction_hash": event.transaction_hash,
+                "pair_id": pair_address,
+                "transaction_hash": transaction_hash,
             },
         )
         burns = list(burns)
@@ -152,11 +152,11 @@ async def handle_transfer(
 
         if burn is None:
             burn = {
-                "transaction_hash": event.transaction_hash,
+                "transaction_hash": transaction_hash,
                 "index": len(burns),
-                "pair_id": felt(pair_address),
-                "sender": felt(transfer.from_),
-                "to": felt(transfer.to),
+                "pair_id": pair_address,
+                "sender": hex(transfer.from_),
+                "to": hex(transfer.to),
                 "liquidity": Decimal128(value),
                 "timestamp": info.context.block_timestamp,
                 "needs_complete": False,
@@ -208,14 +208,12 @@ async def handle_transfer(
         await create_liquidity_snapshot(info, pair_address, transfer.to)
 
 
-async def handle_sync(
-    info: Info[IndexerContext], header: BlockHeader, event: StarkNetEvent
-):
+async def handle_sync(info: Info, event: Event, transaction_hash: str):
     sync = decode_event(sync_decoder, event.data)
-    pair_address = int.from_bytes(event.address, "big")
+    pair_address = hex(felt.to_int(event.from_address))
     logger.info("handle Sync", **sync._asdict())
 
-    pair = await info.storage.find_one("pairs", {"id": felt(pair_address)})
+    pair = await info.storage.find_one("pairs", {"id": pair_address})
     assert pair is not None
 
     token0 = await info.storage.find_one("tokens", {"id": pair["token0_id"]})
@@ -241,7 +239,7 @@ async def handle_sync(
     old_pair = await info.storage.find_one_and_update(
         "pairs",
         {
-            "id": felt(pair_address),
+            "id": pair_address,
         },
         {
             "$set": {
@@ -304,7 +302,7 @@ async def handle_sync(
     await info.storage.find_one_and_update(
         "pairs",
         {
-            "id": felt(pair_address),
+            "id": pair_address,
         },
         {
             "$set": {
@@ -315,14 +313,14 @@ async def handle_sync(
         },
     )
 
-    factory = await info.storage.find_one("factories", {"id": felt(jediswap_factory)})
+    factory = await info.storage.find_one("factories", {"id": hex(jediswap_factory)})
 
     total_liquidity_eth = factory["total_liquidity_eth"].to_decimal() - old_pair["tracked_reserve_eth"].to_decimal() + tracked_liquidity_eth
     total_liquidity_usd = total_liquidity_eth * info.context.eth_price
 
     await info.storage.find_one_and_update(
         "factories",
-        {"id": felt(jediswap_factory)},
+        {"id": hex(jediswap_factory)},
         {
             "$set": {
                 "total_liquidity_eth": Decimal128(total_liquidity_eth),
@@ -332,30 +330,28 @@ async def handle_sync(
     )
 
 
-async def handle_mint(
-    info: Info[IndexerContext], header: BlockHeader, event: StarkNetEvent
-):
+async def handle_mint(info: Info, event: Event, transaction_hash: str):
     mint = decode_event(mint_decoder, event.data)
-    pair_address = int.from_bytes(event.address, "big")
+    pair_address = hex(felt.to_int(event.from_address))
     logger.info("handle Mint", **mint._asdict())
 
     transaction = await info.storage.find_one(
-        "transactions", {"hash": event.transaction_hash}
+        "transactions", {"hash": transaction_hash}
     )
     assert transaction is not None
 
     mints = await info.storage.find(
         "mints",
         {
-            "pair_id": felt(pair_address),
-            "transaction_hash": event.transaction_hash,
+            "pair_id": pair_address,
+            "transaction_hash": transaction_hash,
         },
         sort={"index": 1},
     )
     mints = list(mints)
     assert mints
 
-    pair = await info.storage.find_one("pairs", {"id": felt(pair_address)})
+    pair = await info.storage.find_one("pairs", {"id": pair_address})
     assert pair is not None
 
     token0 = await info.storage.find_one("tokens", {"id": pair["token0_id"]})
@@ -380,16 +376,15 @@ async def handle_mint(
     mint = await info.storage.find_one_and_update(
         "mints",
         {
-            "pair_id": felt(pair_address),
-            "transaction_hash": event.transaction_hash,
+            "pair_id": pair_address,
+            "transaction_hash": transaction_hash,
             "index": len(mints) - 1,
         },
         {
             "$set": {
-                "sender": felt(mint.sender),
+                "sender": hex(mint.sender),
                 "amount0": Decimal128(token0_amount),
                 "amount1": Decimal128(token1_amount),
-                "log_index": event.log_index,
                 "amount_usd": Decimal128(amount_total_usd),
             }
         },
@@ -432,29 +427,31 @@ async def handle_mint(
     )
 
 
-async def handle_burn(info: Info, header: BlockHeader, event: StarkNetEvent):
+async def handle_burn(info: Info, event: Event, transaction_hash: str):
     burn = decode_event(burn_decoder, event.data)
-    pair_address = int.from_bytes(event.address, "big")
+    pair_address = hex(felt.to_int(event.from_address))
     logger.info("handle Burn", **burn._asdict())
 
     transaction = await info.storage.find_one(
-        "transactions", {"hash": event.transaction_hash}
+        "transactions", {"hash": transaction_hash}
     )
     if transaction is None:
         return
 
+    print(transaction_hash)
+
     burns = await info.storage.find(
         "burns",
         {
-            "pair_id": felt(pair_address),
-            "transaction_hash": event.transaction_hash,
+            "pair_id": pair_address,
+            "transaction_hash": transaction_hash,
         },
         sort={"index": 1},
     )
     burns = list(burns)
     assert burns
 
-    pair = await info.storage.find_one("pairs", {"id": felt(pair_address)})
+    pair = await info.storage.find_one("pairs", {"id": pair_address})
     assert pair is not None
 
     token0 = await info.storage.find_one("tokens", {"id": pair["token0_id"]})
@@ -479,16 +476,15 @@ async def handle_burn(info: Info, header: BlockHeader, event: StarkNetEvent):
     burn = await info.storage.find_one_and_update(
         "burns",
         {
-            "pair_id": felt(pair_address),
-            "transaction_hash": event.transaction_hash,
+            "pair_id": pair_address,
+            "transaction_hash": transaction_hash,
             "index": len(burns) - 1,
         },
         {
             "$set": {
-                # "to": felt(burn.to),
+                # "to": hex(burn.to),
                 "amount0": Decimal128(token0_amount),
                 "amount1": Decimal128(token1_amount),
-                "log_index": event.log_index,
                 "amount_usd": Decimal128(amount_total_usd),
             }
         },
@@ -531,14 +527,12 @@ async def handle_burn(info: Info, header: BlockHeader, event: StarkNetEvent):
     )
 
 
-async def handle_swap(
-    info: Info[IndexerContext], header: BlockHeader, event: StarkNetEvent
-):
+async def handle_swap(info: Info, event: Event, transaction_hash: str):
     swap = decode_event(swap_decoder, event.data)
-    pair_address = int.from_bytes(event.address, "big")
+    pair_address = hex(felt.to_int(event.from_address))
     logger.info("handle Swap", **swap._asdict())
 
-    pair = await info.storage.find_one("pairs", {"id": felt(pair_address)})
+    pair = await info.storage.find_one("pairs", {"id": pair_address})
     assert pair is not None
 
     token0 = await info.storage.find_one("tokens", {"id": pair["token0_id"]})
@@ -618,7 +612,7 @@ async def handle_swap(
     # update pair
     await info.storage.find_one_and_update(
         "pairs",
-        {"id": felt(pair_address)},
+        {"id": pair_address},
         {
             "$inc": {
                 "volume_usd": Decimal128(tracked_amount_usd),
@@ -633,7 +627,7 @@ async def handle_swap(
     # update factory
     await info.storage.find_one_and_update(
         "factories",
-        {"id": felt(jediswap_factory)},
+        {"id": hex(jediswap_factory)},
         {
             "$inc": {
                 "total_volume_usd": Decimal128(tracked_amount_usd),
@@ -644,22 +638,21 @@ async def handle_swap(
         },
     )
 
-    await create_transaction(info, event.transaction_hash)
+    await create_transaction(info, transaction_hash)
 
     await info.storage.insert_one(
         "swaps",
         {
-            "transaction_hash": event.transaction_hash,
-            "log_index": event.log_index,
+            "transaction_hash": transaction_hash,
             "pair_id": pair["id"],
             "timestamp": info.context.block_timestamp,
             "amount0_in": Decimal128(amount0_in),
             "amount1_in": Decimal128(amount1_in),
             "amount0_out": Decimal128(amount0_out),
             "amount1_out": Decimal128(amount1_out),
-            "sender": felt(swap.sender),
-            "to": felt(swap.to),
-            "from": felt(swap.sender),  # TODO: should be tx sender
+            "sender": hex(swap.sender),
+            "to": hex(swap.to),
+            "from": hex(swap.sender),  # TODO: should be tx sender
             "amount_usd": Decimal128(max(tracked_amount_usd, derive_amount_usd)),
         },
     )

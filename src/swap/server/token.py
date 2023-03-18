@@ -6,12 +6,12 @@ import strawberry
 from pymongo.database import Database
 from strawberry.types import Info
 
-from swap.server.helpers import FieldElement, BlockFilter, felt, add_block_constraint, add_order_by_constraint
+from swap.server.helpers import BlockFilter, add_block_constraint, add_order_by_constraint
 
 
 @strawberry.type
 class Token:
-    id: FieldElement
+    id: str
 
     name: str
     symbol: str
@@ -54,12 +54,12 @@ async def get_tokens(
 
     if where is not None:
         if where.id is not None:
-            token_id = int(where.id, 16)
-            query["id"] = felt(token_id)
+            token_id = hex(int(where.id, 16))
+            query["id"] = token_id
         if where.id_in:
             token_in = []
             for token in where.id_in:
-                token_in.append(felt(int(token, 16)))
+                token_in.append(hex(int(token, 16)))
             query["id"] = {"$in": token_in}
 
     cursor = db["tokens"].find(query, skip=skip, limit=first)
@@ -68,7 +68,7 @@ async def get_tokens(
     return [Token.from_mongo(d) for d in cursor]
 
 
-def get_token(db: Database, id: bytes) -> Token:
+def get_token(db: Database, id: str) -> Token:
     # db: Database = info.context["db"]
 
     query = {"id": id}

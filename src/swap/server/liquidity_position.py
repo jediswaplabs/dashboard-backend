@@ -6,21 +6,21 @@ import strawberry
 from pymongo.database import Database
 from strawberry.types import Info
 
-from swap.server.helpers import (FieldElement, felt, add_block_constraint, add_order_by_constraint, serialize_hex)
+from swap.server.helpers import (add_block_constraint, add_order_by_constraint)
 from swap.server.pair import Pair
 from swap.server.user import User, get_user
 
 
 @strawberry.type
 class LiquidityPosition:
-    user_id: strawberry.Private[FieldElement]
-    pair_id: strawberry.Private[FieldElement]
+    user_id: strawberry.Private[str]
+    pair_id: strawberry.Private[str]
 
     liquidity_token_balance: Decimal
 
     @strawberry.field
     def id(self) -> str:
-        return f"{serialize_hex(self.pair_id)}-${serialize_hex(self.user_id)}"
+        return f"{self.pair_id}-${self.user_id}"
 
     @classmethod
     def from_mongo(cls, data):
@@ -40,8 +40,8 @@ class LiquidityPosition:
 
 @strawberry.type
 class LiquidityPositionSnapshot:
-    user_id: strawberry.Private[FieldElement]
-    pair_id: strawberry.Private[FieldElement]
+    user_id: strawberry.Private[str]
+    pair_id: strawberry.Private[str]
 
     timestamp: datetime
     block: int
@@ -55,7 +55,7 @@ class LiquidityPositionSnapshot:
 
     @strawberry.field
     def id(self) -> str:
-        return f"{serialize_hex(self.pair_id)}-${serialize_hex(self.user_id)}"
+        return f"{self.pair_id}-${self.user_id}"
 
     @classmethod
     def from_mongo(cls, data):
@@ -96,11 +96,11 @@ def get_liquidity_positions(
 
     if where is not None:
         if where.pair is not None:
-            pair_id = int(where.pair, 16)
-            query["pair_address"] = felt(pair_id)
+            pair_id = hex(int(where.pair, 16))
+            query["pair_address"] = pair_id
         if where.user is not None:
-            user_id = int(where.user, 16)
-            query["user"] = felt(user_id)
+            user_id = hex(int(where.user, 16))
+            query["user"] = user_id
 
     cursor = db["liquidity_positions"].find(query, skip=skip, limit=first)
     cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
@@ -117,11 +117,11 @@ def get_liquidity_position_snapshots(
 
     if where is not None:
         if where.pair is not None:
-            pair_id = int(where.pair, 16)
-            query["pair_address"] = felt(pair_id)
+            pair_id = hex(int(where.pair, 16))
+            query["pair_address"] = pair_id
         if where.user is not None:
-            user_id = int(where.user, 16)
-            query["user"] = felt(user_id)
+            user_id = hex(int(where.user, 16))
+            query["user"] = user_id
 
     cursor = db["liquidity_position_snapshots"].find(query, skip=skip, limit=first)
     cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)

@@ -177,14 +177,14 @@ trio = ["trio (>=0.16,<0.22)"]
 
 [[package]]
 name = "apibara"
-version = "0.6.4"
+version = "0.6.5"
 description = "Apibara cliend SDK. Stream and transform on-chain data with Python."
 category = "main"
 optional = false
 python-versions = ">=3.8,<3.11"
 files = [
-    {file = "apibara-0.6.4-py3-none-any.whl", hash = "sha256:7d5d78c8b21c18d03762bbf647892a5b64597d4cc52e204406ee184c1ff53623"},
-    {file = "apibara-0.6.4.tar.gz", hash = "sha256:9fe37bbc9372b1aa08927fda8204f71aeb28f07c9488cb46aa2a8c714d1c5478"},
+    {file = "apibara-0.6.5-py3-none-any.whl", hash = "sha256:01c98ca20b1229474c610018154dd71058a3d244830b73e28cfe1b2e0326e65c"},
+    {file = "apibara-0.6.5.tar.gz", hash = "sha256:d4b3d19615ed7258058653e2a77a556cf065385728f1ee677bb44a2c8a941d31"},
 ]
 
 [package.dependencies]
@@ -1297,26 +1297,6 @@ files = [
     {file = "idna-3.4-py3-none-any.whl", hash = "sha256:90b77e79eaa3eba6de819a0c442c0b4ceefc341a7a2ab77d7562bf49f425c5c2"},
     {file = "idna-3.4.tar.gz", hash = "sha256:814f528e8dead7d329833b91c5faa87d60bf71824cd12a7530b5526063d02cb4"},
 ]
-
-[[package]]
-name = "importlib-metadata"
-version = "6.0.0"
-description = "Read metadata from Python packages"
-category = "main"
-optional = false
-python-versions = ">=3.7"
-files = [
-    {file = "importlib_metadata-6.0.0-py3-none-any.whl", hash = "sha256:7efb448ec9a5e313a57655d35aa54cd3e01b7e1fbcf72dce1bf06119420f5bad"},
-    {file = "importlib_metadata-6.0.0.tar.gz", hash = "sha256:e354bedeb60efa6affdcc8ae121b73544a7aa74156d047311948f6d711cd378d"},
-]
-
-[package.dependencies]
-zipp = ">=0.5"
-
-[package.extras]
-docs = ["furo", "jaraco.packaging (>=9)", "jaraco.tidelift (>=1.4)", "rst.linker (>=1.9)", "sphinx (>=3.5)", "sphinx-lint"]
-perf = ["ipython"]
-testing = ["flake8 (<5)", "flufl.flake8", "importlib-resources (>=1.3)", "packaging", "pyfakefs", "pytest (>=6)", "pytest-black (>=0.3.7)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=1.3)", "pytest-flake8", "pytest-mypy (>=0.9.1)", "pytest-perf (>=0.9.2)"]
 
 [[package]]
 name = "importlib-resources"
@@ -2660,23 +2640,19 @@ files = [
 
 [[package]]
 name = "typeguard"
-version = "3.0.1"
+version = "2.13.3"
 description = "Run-time type checker for Python"
 category = "main"
 optional = false
-python-versions = ">=3.7.4"
+python-versions = ">=3.5.3"
 files = [
-    {file = "typeguard-3.0.1-py3-none-any.whl", hash = "sha256:15628045c830abf68533247afd2cb04683b5ce6f4e30d5401a5ef6f5182280de"},
-    {file = "typeguard-3.0.1.tar.gz", hash = "sha256:beb0e67c5dc76eea4a6d00a6606d444d899589908362960769d0c4a1d32bca70"},
+    {file = "typeguard-2.13.3-py3-none-any.whl", hash = "sha256:5e3e3be01e887e7eafae5af63d1f36c849aaa94e3a0112097312aabfa16284f1"},
+    {file = "typeguard-2.13.3.tar.gz", hash = "sha256:00edaa8da3a133674796cf5ea87d9f4b4c367d77476e185e80251cc13dfbb8c4"},
 ]
 
-[package.dependencies]
-importlib-metadata = {version = ">=3.6", markers = "python_version < \"3.10\""}
-typing-extensions = {version = ">=4.4.0", markers = "python_version < \"3.11\""}
-
 [package.extras]
-doc = ["packaging", "sphinx-autodoc-typehints (>=1.2.0)", "sphinx-rtd-theme"]
-test = ["mypy (>=0.991)", "pytest (>=7)"]
+doc = ["sphinx-autodoc-typehints (>=1.2.0)", "sphinx-rtd-theme"]
+test = ["mypy", "pytest", "typing-extensions"]
 
 [[package]]
 name = "typing-extensions"
@@ -2987,4 +2963,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">3.8,<3.10"
-content-hash = "ceeb67b18eddf85234f34b3b7300a7762365a97f295764c2e8dcf40e3f7f7a84"
+content-hash = "63328e9903590bf41c4f38b2631e4b95399779c8485427e9afc4a119f36e2b4a"

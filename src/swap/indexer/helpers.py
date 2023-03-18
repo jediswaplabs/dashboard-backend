@@ -1,17 +1,13 @@
 from decimal import Decimal
 from typing import List, Union
 
-from apibara import Info
+from apibara.indexer import Info
 from bson import Decimal128
 from starknet_py.cairo.felt import decode_shortstring
 from starknet_py.contract import ContractFunction
 from starknet_py.net.client_models import Call
 
 from swap.indexer.context import IndexerContext
-
-
-def felt(n: int) -> str:
-    return n.to_bytes(32, "big")
 
 
 def uint256(low, high):
@@ -29,8 +25,8 @@ def price(a: Decimal, b: Decimal):
     return a / b
 
 
-async def create_token(info: Info[IndexerContext], address: int):
-    token = await info.storage.find_one("tokens", {"id": felt(address)})
+async def create_token(info: Info, address: int):
+    token = await info.storage.find_one("tokens", {"id": hex(address)})
     if token is not None:
         return token
     name = await fetch_token_name(info, address)
@@ -39,12 +35,12 @@ async def create_token(info: Info[IndexerContext], address: int):
     total_supply = await fetch_token_total_supply(info, address)
 
     token = {
-        "id": felt(address),
+        "id": hex(address),
         "name": name,
         "symbol": symbol,
         "decimals": decimals,
         # used for market cap
-        "total_supply": felt(total_supply),
+        "total_supply": hex(total_supply),
         # token specific volume
         "trade_volume": Decimal128("0"),
         "trade_volume_usd": Decimal128("0"),
@@ -61,7 +57,7 @@ async def create_token(info: Info[IndexerContext], address: int):
     return token
 
 
-async def create_transaction(info: Info[IndexerContext], transaction_hash: bytes):
+async def create_transaction(info: Info, transaction_hash: bytes):
     transaction = await info.storage.find_one(
         "transactions", {"hash": transaction_hash}
     )
@@ -77,10 +73,10 @@ async def create_transaction(info: Info[IndexerContext], transaction_hash: bytes
     await info.storage.insert_one("transactions", transaction)
     return transaction
 
-async def find_or_create_user(info: Info[IndexerContext], user_id: Union[int, bytes]):
+async def find_or_create_user(info: Info, user_id: Union[int, bytes]):
     
     if isinstance(user_id, int):
-        user_id = felt(user_id)
+        user_id = hex(user_id)
     
     user = await info.storage.find_one(
         "users", {"id": user_id}
@@ -101,17 +97,17 @@ async def find_or_create_user(info: Info[IndexerContext], user_id: Union[int, by
 
 
 async def replace_liquidity_position(
-    info: Info[IndexerContext], pair_address: int, user: int, balance: Decimal
+    info: Info, pair_address: str, user: int, balance: Decimal
 ):
     await info.storage.find_one_and_replace(
         "liquidity_positions",
         {
-            "pair_address": felt(pair_address),
-            "user": felt(user),
+            "pair_address": pair_address,
+            "user": hex(user),
         },
         {
-            "pair_address": felt(pair_address),
-            "user": felt(user),
+            "pair_address": pair_address,
+            "user": hex(user),
             "liquidity_token_balance": Decimal128(balance),
         },
         upsert=True,
@@ -119,19 +115,19 @@ async def replace_liquidity_position(
 
 
 async def create_liquidity_snapshot(
-    info: Info[IndexerContext], pair_address: int, user: Union[int, bytes]
+    info: Info, pair_address: str, user: Union[int, bytes]
 ):
     if isinstance(user, int):
-        user = felt(user)
+        user = hex(user)
 
-    pair = await info.storage.find_one("pairs", {"id": felt(pair_address)})
+    pair = await info.storage.find_one("pairs", {"id": pair_address})
     assert pair is not None
     token0 = await info.storage.find_one("tokens", {"id": pair["token0_id"]})
     assert token0 is not None
     token1 = await info.storage.find_one("tokens", {"id": pair["token1_id"]})
     assert token1 is not None
     position = await info.storage.find_one(
-        "liquidity_positions", {"pair_address": felt(pair_address), "user": user}
+        "liquidity_positions", {"pair_address": pair_address, "user": user}
     )
     assert position is not None
 
@@ -141,7 +137,7 @@ async def create_liquidity_snapshot(
     await info.storage.insert_one(
         "liquidity_position_snapshots",
         {
-            "pair_address": felt(pair_address),
+            "pair_address": pair_address,
             "user": user,
             "timestamp": info.context.block_timestamp,
             "block": info.context.block_number,
@@ -157,10 +153,10 @@ async def create_liquidity_snapshot(
 
 
 async def update_transaction_count(
-    info: Info[IndexerContext], factory: int, pair: int, token0, token1
+    info: Info, factory: int, pair_address: str, token0, token1
 ):
     await info.storage.find_one_and_update(
-        "factories", {"id": felt(factory)}, {"$inc": {"transaction_count": 1}}
+        "factories", {"id": hex(factory)}, {"$inc": {"transaction_count": 1}}
     )
 
     await info.storage.find_one_and_update(
@@ -172,39 +168,39 @@ async def update_transaction_count(
     )
 
     await info.storage.find_one_and_update(
-        "pairs", {"id": felt(pair)}, {"$inc": {"transaction_count": 1}}
+        "pairs", {"id": pair_address}, {"$inc": {"transaction_count": 1}}
     )
 
 
 async def fetch_token_balance(
-    info: Info[IndexerContext], token_address: int, user: int
+    info: Info, token_address: int, user: int
 ):
     result = await simple_call(info, token_address, "balanceOf", [user])
     return uint256(result[0], result[1])
 
 
-async def fetch_token_name(info: Info[IndexerContext], address: int):
+async def fetch_token_name(info: Info, address: int):
     result = await simple_call(info, address, "name", [])
     return decode_shortstring(result[0]).strip("\x00")
 
 
-async def fetch_token_symbol(info: Info[IndexerContext], address: int):
+async def fetch_token_symbol(info: Info, address: int):
     result = await simple_call(info, address, "symbol", [])
     return decode_shortstring(result[0]).strip("\x00")
 
 
-async def fetch_token_decimals(info: Info[IndexerContext], address: int):
+async def fetch_token_decimals(info: Info, address: int):
     result = await simple_call(info, address, "decimals", [])
     return result[0]
 
 
-async def fetch_token_total_supply(info: Info[IndexerContext], address: int):
+async def fetch_token_total_supply(info: Info, address: int):
     result = await simple_call(info, address, "totalSupply", [])
     return uint256(result[0], result[1])
 
 
 async def simple_call(
-    info: Info[IndexerContext], contract: int, method: str, calldata: List[int]
+    info: Info, contract: int, method: str, calldata: List[int]
 ):
     selector = ContractFunction.get_selector(method)
     call = Call(contract, selector, calldata)

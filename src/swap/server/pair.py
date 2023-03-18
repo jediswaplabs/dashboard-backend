@@ -8,12 +8,12 @@ from pymongo.database import Database
 from strawberry.dataloader import DataLoader
 from strawberry.types import Info
 
-from swap.server.helpers import FieldElement, BlockFilter, felt, add_block_constraint, add_order_by_constraint
+from swap.server.helpers import BlockFilter, add_block_constraint, add_order_by_constraint
 from swap.server.token import Token
 
 @strawberry.type
 class Pair:
-    id: FieldElement
+    id: str
 
     tx_count: int
     reserve0: Decimal
@@ -30,12 +30,12 @@ class Pair:
     token1_price: Decimal
     created_at_timestamp: datetime
 
-    token0_id: strawberry.Private[FieldElement]
+    token0_id: strawberry.Private[str]
     @strawberry.field
     def token0(self, info: Info) -> Token:
         return info.context["token_loader"].load(self.token0_id)
 
-    token1_id: strawberry.Private[FieldElement]
+    token1_id: strawberry.Private[str]
     @strawberry.field
     def token1(self, info: Info) -> Token:
         return info.context["token_loader"].load(self.token1_id)
@@ -79,19 +79,19 @@ async def get_pairs(
 
     if where is not None:
         if where.id is not None:
-            pair_id = int(where.id, 16)
-            query["id"] = felt(pair_id)
+            pair_id = hex(int(where.id, 16))
+            query["id"] = pair_id
         if where.id_in:
             pair_in = []
             for pair_id in where.id_in:
-                pair_in.append(felt(int(pair_id, 16)))
+                pair_in.append(hex(int(pair_id, 16)))
             query["id"] = {"$in": pair_in}
         if where.token0 is not None:
-            token0_id = int(where.token0, 16)
-            query["token0_id"] = felt(token0_id)
+            token0_id = hex(int(where.token0, 16))
+            query["token0_id"] = token0_id
         if where.token1 is not None:
-            token1_id = int(where.token1, 16)
-            query["token1_id"] = felt(token1_id)
+            token1_id = hex(int(where.token1, 16))
+            query["token1_id"] = token1_id
 
     cursor = db["pairs"].find(query, skip=skip, limit=first)
     cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)

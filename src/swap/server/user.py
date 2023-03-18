@@ -6,12 +6,12 @@ import strawberry
 from pymongo.database import Database
 from strawberry.types import Info
 
-from swap.server.helpers import FieldElement, BlockFilter, felt, add_block_constraint, add_order_by_constraint
+from swap.server.helpers import BlockFilter, add_block_constraint, add_order_by_constraint
 
 
 @strawberry.type
 class User:
-    id: FieldElement
+    id: str
     
     transaction_count: Decimal = strawberry.field(name="txCount")
     mint_count: Decimal
@@ -43,12 +43,12 @@ async def get_users(
 
     if where is not None:
         if where.id is not None:
-            user_id = int(where.id, 16)
-            query["id"] = felt(user_id)
+            user_id = hex(int(where.id, 16))
+            query["id"] = user_id
         if where.id_in:
             user_in = []
             for user_id in where.id_in:
-                user_in.append(felt(int(user_id, 16)))
+                user_in.append(hex(int(user_id, 16)))
             query["id"] = {"$in": user_in}
 
     cursor = db["users"].find(query, skip=skip, limit=first)
@@ -56,7 +56,7 @@ async def get_users(
 
     return [User.from_mongo(d) for d in cursor]
 
-def get_user(info: Info, id: bytes) -> User:
+def get_user(info: Info, id: str) -> User:
     db: Database = info.context["db"]
 
     query = {"id": id}

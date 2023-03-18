@@ -4,18 +4,17 @@ from typing import List, Optional
 import strawberry
 from pymongo.database import Database
 
-from swap.server.helpers import (BlockFilter, FieldElement,
-                                    add_block_constraint)
+from swap.server.helpers import (BlockFilter, add_block_constraint)
 
 
 @strawberry.input
 class FactoryFilter:
-    id: Optional[FieldElement]
+    id: Optional[str]
 
 
 @strawberry.type
 class Factory:
-    id: FieldElement
+    id: str
 
     pair_count: int
 
@@ -53,6 +52,7 @@ async def get_factories(
 
     if where is not None:
         if where.id is not None:
-            query["id"] = where.id
+            factory_id = hex(int(where.id, 16))
+            query["id"] = factory_id
     cursor = db["factories"].find(query)
     return [Factory.from_mongo(d) for d in cursor]
