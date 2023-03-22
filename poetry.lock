@@ -177,14 +177,14 @@ trio = ["trio (>=0.16,<0.22)"]
 
 [[package]]
 name = "apibara"
-version = "0.6.5"
+version = "0.6.6a2"
 description = "Apibara cliend SDK. Stream and transform on-chain data with Python."
 category = "main"
 optional = false
 python-versions = ">=3.8,<3.11"
 files = [
-    {file = "apibara-0.6.5-py3-none-any.whl", hash = "sha256:01c98ca20b1229474c610018154dd71058a3d244830b73e28cfe1b2e0326e65c"},
-    {file = "apibara-0.6.5.tar.gz", hash = "sha256:d4b3d19615ed7258058653e2a77a556cf065385728f1ee677bb44a2c8a941d31"},
+    {file = "apibara-0.6.6a2-py3-none-any.whl", hash = "sha256:50cd19051c81d5b025c2ba9b5e5c6b0df1e533cdec9ca7db99ae83364df82bae"},
+    {file = "apibara-0.6.6a2.tar.gz", hash = "sha256:cab2bbd63b0b8216b48249238a37b765c5d3a192ed1a4a66337276e9e70a8ef8"},
 ]
 
 [package.dependencies]
@@ -872,25 +872,25 @@ gmpy2 = ["gmpy2"]
 
 [[package]]
 name = "eth-abi"
-version = "4.0.0b2"
+version = "4.0.0b3"
 description = "eth_abi: Python utilities for working with Ethereum ABI definitions, especially encoding and decoding"
 category = "main"
 optional = false
 python-versions = ">=3.7, <4"
 files = [
-    {file = "eth_abi-4.0.0b2-py3-none-any.whl", hash = "sha256:9c81da53b0b48f72c539eb5744b7596ccb97e626e585eb4f1354b1670ea51ae2"},
-    {file = "eth_abi-4.0.0b2.tar.gz", hash = "sha256:0cbd5a854acf101843d3f009b10a8b63050125981211ea4d074a80eb953f97ab"},
+    {file = "eth_abi-4.0.0b3-py3-none-any.whl", hash = "sha256:2c22cc9cf5598cfb1562d9ac5ba67e47142aa51cdb241344654216e70a9053a7"},
+    {file = "eth_abi-4.0.0b3.tar.gz", hash = "sha256:24f216c8445aab725f5e10c491b4c96506b47264436b3d4af1186b7dd6fb45e9"},
 ]
 
 [package.dependencies]
 eth-typing = ">=3.0.0"
 eth-utils = ">=2.0.0"
-parsimonious = ">=0.8.0,<0.10.0"
+parsimonious = ">=0.9.0,<0.10.0"
 
 [package.extras]
-dev = ["black", "bumpversion (>=0.5.3,<1)", "eth-hash[pycryptodome]", "flake8 (==4.0.1)", "hypothesis (>=4.18.2,<5.0.0)", "ipython", "isort (>=4.2.15,<5)", "jinja2 (>=3.0.0,<3.1.0)", "mypy (==0.910)", "pydocstyle (>=6.0.0,<7)", "pytest (>=6.2.5,<7)", "pytest-pythonpath (>=0.7.1)", "pytest-watch (>=4.1.0,<5)", "pytest-xdist (>=2.5.0,<3)", "sphinx (>=4.5.0,<5)", "sphinx-rtd-theme (>=1.0.0)", "towncrier (==18.5.0)", "tox (>=2.9.1,<3)", "twine", "wheel"]
+dev = ["black", "bumpversion (>=0.5.3,<1)", "eth-hash[pycryptodome]", "flake8", "hypothesis (>=4.18.2,<5.0.0)", "ipython", "isort (>=4.2.15,<5)", "jinja2 (>=3.0.0,<3.1.0)", "mypy (==0.910)", "pydocstyle (>=6.0.0,<7)", "pytest (>=6.2.5,<7)", "pytest-pythonpath (>=0.7.1)", "pytest-watch (>=4.1.0,<5)", "pytest-xdist (>=2.5.0,<3)", "sphinx (>=4.5.0,<5)", "sphinx-rtd-theme (>=1.0.0)", "towncrier (==18.5.0)", "tox (>=2.9.1,<3)", "twine", "wheel"]
 doc = ["jinja2 (>=3.0.0,<3.1.0)", "sphinx (>=4.5.0,<5)", "sphinx-rtd-theme (>=1.0.0)", "towncrier (==18.5.0)"]
-lint = ["black", "flake8 (==4.0.1)", "isort (>=4.2.15,<5)", "mypy (==0.910)", "pydocstyle (>=6.0.0,<7)"]
+lint = ["black", "flake8", "isort (>=4.2.15,<5)", "mypy (==0.910)", "pydocstyle (>=6.0.0,<7)"]
 test = ["eth-hash[pycryptodome]", "hypothesis (>=4.18.2,<5.0.0)", "pytest (>=6.2.5,<7)", "pytest-pythonpath (>=0.7.1)", "pytest-xdist (>=2.5.0,<3)", "tox (>=2.9.1,<3)"]
 tools = ["hypothesis (>=4.18.2,<5.0.0)"]
 
@@ -1837,19 +1837,19 @@ files = [
 
 [[package]]
 name = "pipdeptree"
-version = "2.5.2"
+version = "2.6.0"
 description = "Command line utility to show dependency tree of packages."
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pipdeptree-2.5.2-py3-none-any.whl", hash = "sha256:41c9fa55381dedcde3748712536b3d431931090a74f829916cb2264849c1587d"},
-    {file = "pipdeptree-2.5.2.tar.gz", hash = "sha256:787c994f7d2cff9c3d55750590fd212dabc8ff87e4690624eabb449a49dfd41d"},
+    {file = "pipdeptree-2.6.0-py3-none-any.whl", hash = "sha256:058b53373ee5bb8a97b36a966af59029378165dc93829c977538efa4e20ba524"},
+    {file = "pipdeptree-2.6.0.tar.gz", hash = "sha256:b0ed2685230c71ca28d35e96b09685406f6f9cc03b81b393264d2c6b14c5cf23"},
 ]
 
 [package.extras]
 graphviz = ["graphviz (>=0.20.1)"]
-test = ["covdefaults (>=2.2.2)", "diff-cover (>=7.4)", "pip (>=23.0.1)", "pytest (>=7.2.1)", "pytest-cov (>=4)", "pytest-mock (>=3.10)", "virtualenv (>=20.20,<21)"]
+test = ["covdefaults (>=2.3)", "diff-cover (>=7.5)", "pip (>=23.0.1)", "pytest (>=7.2.2)", "pytest-cov (>=4)", "pytest-mock (>=3.10)", "virtualenv (>=20.20,<21)"]
 
 [[package]]
 name = "pkgutil-resolve-name"
@@ -2164,18 +2164,18 @@ testing = ["argcomplete", "hypothesis (>=3.56)", "mock", "nose", "pygments (>=2.
 
 [[package]]
 name = "pytest-asyncio"
-version = "0.20.3"
+version = "0.21.0"
 description = "Pytest support for asyncio"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "pytest-asyncio-0.20.3.tar.gz", hash = "sha256:83cbf01169ce3e8eb71c6c278ccb0574d1a7a3bb8eaaf5e50e0ad342afb33b36"},
-    {file = "pytest_asyncio-0.20.3-py3-none-any.whl", hash = "sha256:f129998b209d04fcc65c96fc85c11e5316738358909a8399e93be553d7656442"},
+    {file = "pytest-asyncio-0.21.0.tar.gz", hash = "sha256:2b38a496aef56f56b0e87557ec313e11e1ab9276fc3863f6a7be0f1d0e415e1b"},
+    {file = "pytest_asyncio-0.21.0-py3-none-any.whl", hash = "sha256:f2b3366b7cd501a4056858bd39349d5af19742aed2d81660b7998b6341c7eb9c"},
 ]
 
 [package.dependencies]
-pytest = ">=6.1.0"
+pytest = ">=7.0.0"
 
 [package.extras]
 docs = ["sphinx (>=5.3)", "sphinx-rtd-theme (>=1.0)"]
@@ -2298,18 +2298,18 @@ files = [
 
 [[package]]
 name = "redis"
-version = "4.5.1"
+version = "4.5.2"
 description = "Python client for Redis database and key-value store"
 category = "main"
 optional = false
 python-versions = ">=3.7"
 files = [
-    {file = "redis-4.5.1-py3-none-any.whl", hash = "sha256:5deb072d26e67d2be1712603bfb7947ec3431fb0eec9c578994052e33035af6d"},
-    {file = "redis-4.5.1.tar.gz", hash = "sha256:1eec3741cda408d3a5f84b78d089c8b8d895f21b3b050988351e925faf202864"},
+    {file = "redis-4.5.2-py3-none-any.whl", hash = "sha256:4b12b3a1e9bfb43dc533330ec6d142329d0c27ea6bb6716a9d0389e8f2038a4e"},
+    {file = "redis-4.5.2.tar.gz", hash = "sha256:d8ae1a4f725eea6e3958411870fdf944c587b00ea12be28d3bd5575d8f26430c"},
 ]
 
 [package.dependencies]
-async-timeout = ">=4.0.2"
+async-timeout = {version = ">=4.0.2", markers = "python_version < \"3.11\""}
 
 [package.extras]
 hiredis = ["hiredis (>=1.0.0)"]
@@ -2963,4 +2963,4 @@ testing = ["big-O", "flake8 (<5)", "jaraco.functools", "jaraco.itertools", "more
 [metadata]
 lock-version = "2.0"
 python-versions = ">3.8,<3.10"
-content-hash = "63328e9903590bf41c4f38b2631e4b95399779c8485427e9afc4a119f36e2b4a"
+content-hash = "bd2618befefc63f9e66dfc372825862db50941de7d45f97aa2c6aea09c435147"

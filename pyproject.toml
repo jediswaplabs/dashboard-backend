@@ -9,7 +9,7 @@ swap-indexer = "swap.main:cli"
 
 [tool.poetry.dependencies]
 python = ">3.8,<3.10"
-apibara = { version = "^0.6.0", extras = ["indexer"] }
+apibara = { version = "0.6.6a2", extras = ["indexer"] }
 click = "^8.1.3"
 starknet-py = "^0.6.1a0"
 pymongo = {extras = ["srv"], version = "^4.1.1"}
