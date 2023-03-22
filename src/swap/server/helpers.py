@@ -2,8 +2,6 @@ from typing import NewType, Optional, TypeVar, Generic
 from pymongo import ASCENDING, DESCENDING
 from pymongo.cursor import CursorType
 
-from swap.indexer.helpers import felt
-
 import strawberry
 
 

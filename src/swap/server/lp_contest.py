@@ -7,7 +7,7 @@ import strawberry
 from pymongo.database import Database
 from strawberry.types import Info
 
-from swap.server.helpers import FieldElement, BlockFilter, felt, add_block_constraint, add_order_by_constraint
+from swap.server.helpers import add_block_constraint, add_order_by_constraint
 from swap.server.user import User, get_user
 
 db_name_for_contest = "lp_contest_67812345"
@@ -18,7 +18,7 @@ contest_end_block = 27100
 @strawberry.type
 class LPContest:
     
-    user_id: strawberry.Private[FieldElement]
+    user_id: strawberry.Private[str]
     block: int
     timestamp: datetime
     contest_value: Decimal
@@ -67,8 +67,8 @@ async def get_lp_contest_block(
 
     if where is not None:
         if where.user is not None:
-            user = int(where.user, 16)
-            query["user"] = felt(user)
+            user = hex(int(where.user, 16))
+            query["user"] = user
 
     cursor = db[f"{db_name_for_contest}_block"].find(query, skip=skip, limit=first)
     cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)

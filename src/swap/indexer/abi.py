@@ -1,5 +1,7 @@
 from typing import List
 
+from apibara.starknet import felt
+
 from starknet_py.contract import (FunctionCallSerializer,
                                   identifier_manager_from_abi)
 
@@ -100,4 +102,4 @@ burn_decoder = _event_decoder(burn_abi)
 
 def decode_event(decoder: FunctionCallSerializer, data: List[bytes]):
     # starknet.py requires data to be int, not bytes
-    return decoder.to_python([int.from_bytes(d, "big") for d in data])
+    return decoder.to_python([felt.to_int(d) for d in data])

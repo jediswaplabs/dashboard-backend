@@ -7,15 +7,15 @@ import strawberry
 from pymongo.database import Database
 from strawberry.types import Info
 
-from swap.server.helpers import FieldElement, BlockFilter, felt, add_block_constraint, add_order_by_constraint
+from swap.server.helpers import BlockFilter, add_block_constraint, add_order_by_constraint
 
 
 @strawberry.type
 class Block:
-    id: FieldElement
+    id: str
     
     number: int
-    parent_hash: FieldElement
+    parent_hash: str
     timestamp: datetime
 
     @classmethod
@@ -44,7 +44,7 @@ async def get_blocks(
     if where is not None:
         if where.id is not None:
             block_id = int(where.id, 16)
-            query["hash"] = felt(block_id)
+            query["hash"] = hex(block_id)
         if where.timestamp_lt is not None:
             timestamp_lt = datetime.fromtimestamp(where.timestamp_lt)
             query["timestamp"] = {"$lt": timestamp_lt}

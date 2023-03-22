@@ -2,7 +2,6 @@ from datetime import datetime
 from decimal import Decimal
 from celery import Celery
 from kombu import Queue, Exchange
-from swap.indexer.helpers import felt
 from bson import Decimal128
 from pymongo import MongoClient
 from swap.server.helpers import add_order_by_constraint
@@ -99,7 +98,7 @@ def update_pair_cumulative_price(pair_address: str, latest_block_number: int):
     db_name = indexer_id.replace("-", "_")
     db = mongo[db_name]
 
-    pair_id = felt(int(pair_address, 16))
+    pair_id = hex(int(pair_address, 16))
 
     query = dict()
     query["pair"] = pair_id
@@ -147,7 +146,7 @@ def update_pair_cumulative_price(pair_address: str, latest_block_number: int):
 
 @app.task
 def lp_contest_each_user(user: str, latest_block_number: int, latest_block_timestamp: datetime):
-    user = felt(int(user, 16))
+    user = hex(int(user, 16))
     mongo_url = os.environ.get('MONGO_URL', None)
     if mongo_url is None:
         sys.exit("MONGO_URL not set")
