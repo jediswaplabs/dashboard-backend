@@ -23,11 +23,11 @@ PAIR_CREATED_KEY = felt.from_hex("0x19437bf1c5c394fc8509a2e38c9c72c152df0bac8be7
 
 logger = get_logger(__name__)
 
-# # Print apibara logs
-# root_logger = logging.getLogger("apibara")
-# # change to `logging.DEBUG` to print more information
-# root_logger.setLevel(logging.DEBUG)
-# root_logger.addHandler(logging.StreamHandler())
+# Print apibara logs
+root_logger = logging.getLogger("apibara")
+# change to `logging.DEBUG` to print more information
+root_logger.setLevel(logging.DEBUG)
+root_logger.addHandler(logging.StreamHandler())
 
 class JediSwapIndexer(StarkNetIndexer):
     _indexer_id: str

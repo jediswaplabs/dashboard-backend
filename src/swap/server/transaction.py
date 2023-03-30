@@ -36,7 +36,6 @@ class Transaction:
 
 @strawberry.type
 class Mint:
-    index: strawberry.Private[int]
     pair_id: strawberry.Private[str]
 
     transaction_hash: str
@@ -51,7 +50,7 @@ class Mint:
 
     @strawberry.field
     def id(self) -> str:
-        return f"{self.transaction_hash}-{self.index}"
+        return f"{self.transaction_hash}-mint"
 
     @strawberry.field
     def pair(self, info: Info) -> Pair:
@@ -62,7 +61,6 @@ class Mint:
         return cls(
             transaction_hash=data["transaction_hash"],
             timestamp=data["timestamp"],
-            index=data["index"],
             pair_id=data["pair_id"],
             sender=data.get("sender", hex(0)),
             to=data["to"],
@@ -76,7 +74,6 @@ class Mint:
 
 @strawberry.type
 class Burn:
-    index: strawberry.Private[int]
     pair_id: strawberry.Private[str]
 
     transaction_hash: str
@@ -90,7 +87,7 @@ class Burn:
 
     @strawberry.field
     def id(self) -> str:
-        return f"{self.transaction_hash}-{self.index}"
+        return f"{self.transaction_hash}-burn"
     
     @strawberry.field
     def pair(self, info: Info) -> Pair:
@@ -101,7 +98,6 @@ class Burn:
         return cls(
             transaction_hash=data["transaction_hash"],
             timestamp=data["timestamp"],
-            index=data["index"],
             pair_id=data["pair_id"],
             sender=data["sender"],
             to=data["to"],
@@ -114,7 +110,6 @@ class Burn:
 
 @strawberry.type
 class Swap:
-    index: strawberry.Private[int]
     pair_id: strawberry.Private[str]
 
     transaction_hash: str
@@ -130,7 +125,7 @@ class Swap:
 
     @strawberry.field
     def id(self) -> str:
-        return f"{self.transaction_hash}-{self.index}"
+        return f"{self.transaction_hash}-swap"
 
     @strawberry.field
     def pair(self, info: Info) -> Pair:
