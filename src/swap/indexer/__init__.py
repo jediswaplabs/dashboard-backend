@@ -1,9 +1,10 @@
 from decimal import Decimal
 
 import logging
+import asyncio
 
 from apibara.indexer import IndexerRunner, IndexerRunnerConfiguration, Info
-from apibara.indexer.indexer import IndexerConfiguration
+from apibara.indexer.indexer import IndexerConfiguration, Reconnect
 from apibara.protocol.proto.stream_pb2 import Cursor, DataFinality
 from apibara.starknet import EventFilter, Filter, StarkNetIndexer, felt
 from apibara.starknet.cursor import starknet_cursor
@@ -50,12 +51,16 @@ class JediSwapIndexer(StarkNetIndexer):
                 .with_keys([PAIR_CREATED_KEY])
             ),
             starting_cursor=starknet_cursor(index_from_block),
-            finality=DataFinality.DATA_STATUS_FINALIZED,
+            finality=DataFinality.DATA_STATUS_ACCEPTED,
         )
 
     async def handle_data(self, info: Info, data: Block):
         await handle_block(info, data.header)
         await handle_events(self, info, data)
+    
+    async def handle_reconnect(self, exc: Exception, retry_count: int) -> Reconnect:
+        await asyncio.sleep(10 * retry_count)
+        return Reconnect(reconnect=retry_count < 5)
 
 async def handle_block(info: Info, block_header: BlockHeader):
     # Store the block information in the database.
