@@ -1,4 +1,5 @@
 from decimal import Decimal
+from bson import Decimal128
 from typing import List, Optional
 from dataclasses import field
 from datetime import datetime
@@ -44,7 +45,7 @@ class LPContest:
 
 @strawberry.input
 class WhereFilterForLPContest:
-    user: Optional[str] = None
+    user: str
 
 async def get_lp_contest(
     info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc"
@@ -59,7 +60,7 @@ async def get_lp_contest(
     return [LPContest.from_mongo(d) for d in cursor]
 
 async def get_lp_contest_block(
-    info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc", where: Optional[WhereFilterForLPContest] = None
+    info: Info, where: WhereFilterForLPContest, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc"
 ) -> List[LPContest]:
     db: Database = info.context["db"]
 
@@ -74,4 +75,47 @@ async def get_lp_contest_block(
     cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
 
     return [LPContest.from_mongo(d) for d in cursor]
+
+async def get_lp_contest_percentile(
+    info: Info, where: WhereFilterForLPContest) -> str:
+    db: Database = info.context["db"]
+
+    query = dict()
+
+    if where is not None:
+        if where.user is not None:
+            user = hex(int(where.user, 16))
+            query["user"] = user
+    
+    cursor = db[f"{db_name_for_contest}"].find(query)
+    cursor = add_order_by_constraint(cursor)
+    user_contest_value = [d for d in cursor][0]["contest_value"]
+
+    pipeline = [
+    {"$match": {"is_eligible": True}},
+    {"$group": {"_id": None, "contest_values": {"$push": "$contest_value"}}},
+    {"$project": {"count": {"$size": "$contest_values"}, "contest_values": 1}},
+    {"$unwind": "$contest_values"},
+    {"$sort": {"contest_values": 1}},
+    {"$group": {"_id": None, "contest_values": {"$push": "$contest_values"}, "count": {"$first": "$count"}}},
+    {
+        "$project": {
+            "contest_values": 1,
+            "count": 1,
+            "percentileRank": {
+                "$multiply": [
+                    {"$divide": [100, "$count"]},
+                    {"$subtract": [{"$indexOfArray": ["$contest_values", user_contest_value]}, 0.5]},
+                ]
+            },
+        }
+    },
+    ]
+    cursor = db[f"{db_name_for_contest}"].aggregate(pipeline)
+    answer = [d for d in cursor]
+    if len(answer) == 1:
+        answer = round(answer[0]["percentileRank"])
+    else:
+        answer = 0
+    return answer
 
