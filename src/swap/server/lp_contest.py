@@ -76,8 +76,23 @@ async def get_lp_contest_block(
 
     return [LPContest.from_mongo(d) for d in cursor]
 
+@strawberry.type
+class LPContestRanking:
+    
+    rank: Optional[int]
+    total_eligible: Optional[int] = strawberry.field(name="totalEligible")
+    percentile_rank: Optional[int] = strawberry.field(name="percentileRank")
+
+    @classmethod
+    def create_from_dict(cls, data):
+        return cls(
+            rank=data["rank"],
+            total_eligible=data["total_eligible"],
+            percentile_rank=data["percentile_rank"]
+        )
+
 async def get_lp_contest_percentile(
-    info: Info, where: WhereFilterForLPContest) -> str:
+    info: Info, where: WhereFilterForLPContest) -> LPContestRanking:
     db: Database = info.context["db"]
 
     query = dict()
@@ -96,12 +111,13 @@ async def get_lp_contest_percentile(
     {"$group": {"_id": None, "contest_values": {"$push": "$contest_value"}}},
     {"$project": {"count": {"$size": "$contest_values"}, "contest_values": 1}},
     {"$unwind": "$contest_values"},
-    {"$sort": {"contest_values": 1}},
+    {"$sort": {"contest_values": -1}},
     {"$group": {"_id": None, "contest_values": {"$push": "$contest_values"}, "count": {"$first": "$count"}}},
     {
         "$project": {
             "contest_values": 1,
             "count": 1,
+            "rank": {"$indexOfArray": ["$contest_values", user_contest_value]},
             "percentileRank": {
                 "$multiply": [
                     {"$divide": [100, "$count"]},
@@ -113,9 +129,14 @@ async def get_lp_contest_percentile(
     ]
     cursor = db[f"{db_name_for_contest}"].aggregate(pipeline)
     answer = [d for d in cursor]
+    answer_dict = dict()
     if len(answer) == 1:
-        answer = round(answer[0]["percentileRank"])
+        answer_dict["percentile_rank"] = round(answer[0]["percentileRank"])
+        answer_dict["rank"] = answer[0]["rank"]
+        answer_dict["total_eligible"] = answer[0]["count"]
     else:
-        answer = 0
-    return answer
+        answer_dict["percentile_rank"] = None
+        answer_dict["rank"] = None
+        answer_dict["total_eligible"] = None
+    return LPContestRanking.create_from_dict(answer_dict)
 

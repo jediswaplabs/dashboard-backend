@@ -52,6 +52,7 @@ db["users"].create_index([("_chain.valid_to", ASCENDING)])
 db["users"].create_index([("_chain.valid_from", ASCENDING)])
 
 db["liquidity_positions"].create_index([("_chain.valid_to", ASCENDING)])
+db["liquidity_positions"].create_index([("_chain.valid_to", ASCENDING), ("liquidity_token_balance", DESCENDING)])
 
 db["liquidity_position_snapshots"].create_index([("block", ASCENDING)])
 db["liquidity_position_snapshots"].create_index([("user", ASCENDING), ("block", ASCENDING)])
