@@ -154,7 +154,7 @@ def lp_contest_each_user(user: str, latest_block_number: int, latest_block_times
     db = mongo[db_name]
     
     min_lp_value = 25
-    min_blocks = 100
+    min_blocks = 21600
     last_block_number = contest_start_block
     query = dict()
     query["user"] = user
