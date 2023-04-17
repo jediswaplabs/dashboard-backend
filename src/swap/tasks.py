@@ -86,7 +86,7 @@ def lp_contest_for_block(latest_block_number: int):
     users = [d for d in cursor]
     # print(len(users))
     for user in users:
-        lp_contest_each_user.apply_async(args=[user, latest_block_number, latest_block_timestamp], queue=f"{db_name_for_contest}_queue", expires=300)
+        lp_contest_each_user.apply_async(args=[user, latest_block_number, latest_block_timestamp], queue=f"{db_name_for_contest}_queue", expires=600)
     set_in_redis(f"{db_name_for_contest}_last_block_done", latest_block_number)
 
 def update_pair_cumulative_price(pair_address: str, latest_block_number: int):
@@ -106,9 +106,11 @@ def update_pair_cumulative_price(pair_address: str, latest_block_number: int):
     pair_block_data = [d for d in cursor]
     starting_block_number = contest_start_block
     cumulative_price_usd = Decimal(0)
+    time_cumulative_price_usd = Decimal(0)
     if pair_block_data:
         starting_block_number = pair_block_data[-1]["block"] + 1
         cumulative_price_usd = pair_block_data[-1]["cumulative_price_usd"].to_decimal()
+        time_cumulative_price_usd = pair_block_data[-1]["time_cumulative_price_usd"].to_decimal()
 
 
     query = dict()
@@ -132,14 +134,36 @@ def update_pair_cumulative_price(pair_address: str, latest_block_number: int):
         cursor = db["pairs"].find(query)
         required_pair = [d for d in cursor][-1]
         price_usd = required_pair["reserve_usd"].to_decimal() / required_pair["total_supply"].to_decimal()
-        cumulative_price_usd = cumulative_price_usd + price_usd
-        # print(block_number, cumulative_price_usd, price_usd)
+        if block_number == contest_start_block:
+            cumulative_price_usd = price_usd
+            time_cumulative_price_usd = price_usd
+        else:
+            cumulative_price_usd = cumulative_price_usd + price_usd
+            block_query = dict()
+            block_query["number"] = {"$lte": block_number}
+            cursor = db["blocks"].find(block_query, limit=1)
+            cursor = add_order_by_constraint(cursor, "number", "desc")
+            from swap.server.block import Block
+            returned_block = [Block.from_mongo(d) for d in cursor][0]
+            block_timestamp = returned_block.timestamp
+            block_query["number"] = {"$lte": block_number - 1}
+            cursor = db["blocks"].find(block_query, limit=1)
+            cursor = add_order_by_constraint(cursor, "number", "desc")
+            from swap.server.block import Block
+            returned_block = [Block.from_mongo(d) for d in cursor][0]
+            previous_block_timestamp = returned_block.timestamp
+            block_secs = block_timestamp - previous_block_timestamp
+            # print(block_secs.total_seconds(), block_secs)
+            time_cumulative_price_usd = time_cumulative_price_usd + (Decimal(block_secs.total_seconds()) * price_usd)
+
+        # print(block_number, cumulative_price_usd, time_cumulative_price_usd, price_usd)
         db[f"{db_name_for_contest}_pair_block_cum_price"].insert_one(
                 {
                     "pair": pair_id,
                     "block": block_number,
                     "price_usd": Decimal128(price_usd),
-                    "cumulative_price_usd": Decimal128(cumulative_price_usd)
+                    "cumulative_price_usd": Decimal128(cumulative_price_usd),
+                    "time_cumulative_price_usd": Decimal128(time_cumulative_price_usd)
                 }
             )
 
@@ -154,7 +178,7 @@ def lp_contest_each_user(user: str, latest_block_number: int, latest_block_times
     db = mongo[db_name]
     
     min_lp_value = 25
-    min_blocks = 21600
+    min_time = 60 * 60 * 24 * 30
     last_block_number = contest_start_block
     query = dict()
     query["user"] = user
@@ -210,7 +234,7 @@ def lp_contest_each_user(user: str, latest_block_number: int, latest_block_times
     liquidity_position_snapshots = [LiquidityPositionSnapshot.from_mongo(d) for d in cursor]
     total_contest_value = 0
     is_eligible = False
-    total_blocks_eligible = 0
+    total_time_eligible = 0
     for (i, lps) in enumerate(liquidity_position_snapshots):
         this_block_number = lps.block
         this_pair_id = lps.pair_id
@@ -226,11 +250,25 @@ def lp_contest_each_user(user: str, latest_block_number: int, latest_block_times
                 cursor = db[f"{db_name_for_contest}_pair_block_cum_price"].find(query)
                 cursor = add_order_by_constraint(cursor, "block", "desc")
                 pair_block_data = [d for d in cursor]
-                cumulative_price_diff_for_pair = pair_block_data[0]["cumulative_price_usd"].to_decimal() - pair_block_data[1]["cumulative_price_usd"].to_decimal()
+                cumulative_price_diff_for_pair = pair_block_data[0]["time_cumulative_price_usd"].to_decimal() - pair_block_data[1]["time_cumulative_price_usd"].to_decimal()
                 contest_value_contribution = contest_value_contribution + (last_lp_token_balance_for_pair * cumulative_price_diff_for_pair)
             if last_lp_value_total > min_lp_value:
-                total_blocks_eligible = total_blocks_eligible + this_block_number - last_block_number
-                if total_blocks_eligible > min_blocks:
+                block_query = dict()
+                block_query["number"] = {"$lte": this_block_number}
+                cursor = db["blocks"].find(block_query, limit=1)
+                cursor = add_order_by_constraint(cursor, "number", "desc")
+                from swap.server.block import Block
+                returned_block = [Block.from_mongo(d) for d in cursor][0]
+                this_block_timestamp = returned_block.timestamp
+                block_query["number"] = {"$lte": last_block_number}
+                cursor = db["blocks"].find(block_query, limit=1)
+                cursor = add_order_by_constraint(cursor, "number", "desc")
+                from swap.server.block import Block
+                returned_block = [Block.from_mongo(d) for d in cursor][0]
+                last_block_timestamp = returned_block.timestamp
+                time_eligible = this_block_timestamp - last_block_timestamp
+                total_time_eligible = total_time_eligible + int(time_eligible.total_seconds())
+                if total_time_eligible > min_time:
                     is_eligible = True
         total_contest_value = total_contest_value + contest_value_contribution
         this_lp_value = (lps.reserve_usd / lps.liquidity_token_total_supply) * lps.liquidity_token_balance
@@ -249,11 +287,25 @@ def lp_contest_each_user(user: str, latest_block_number: int, latest_block_times
             cursor = db[f"{db_name_for_contest}_pair_block_cum_price"].find(query)
             cursor = add_order_by_constraint(cursor, "block", "desc")
             pair_block_data = [d for d in cursor]
-            cumulative_price_diff_for_pair = pair_block_data[0]["cumulative_price_usd"].to_decimal() - pair_block_data[1]["cumulative_price_usd"].to_decimal()
+            cumulative_price_diff_for_pair = pair_block_data[0]["time_cumulative_price_usd"].to_decimal() - pair_block_data[1]["time_cumulative_price_usd"].to_decimal()
             contest_value_contribution = contest_value_contribution + (last_lp_token_balance_for_pair * cumulative_price_diff_for_pair)
         if last_lp_value_total > min_lp_value:
-            total_blocks_eligible = total_blocks_eligible + latest_block_number - last_block_number
-            if total_blocks_eligible > min_blocks:
+            block_query = dict()
+            block_query["number"] = {"$lte": latest_block_number}
+            cursor = db["blocks"].find(block_query, limit=1)
+            cursor = add_order_by_constraint(cursor, "number", "desc")
+            from swap.server.block import Block
+            returned_block = [Block.from_mongo(d) for d in cursor][0]
+            latest_block_timestamp_ = returned_block.timestamp
+            block_query["number"] = {"$lte": last_block_number}
+            cursor = db["blocks"].find(block_query, limit=1)
+            cursor = add_order_by_constraint(cursor, "number", "desc")
+            from swap.server.block import Block
+            returned_block = [Block.from_mongo(d) for d in cursor][0]
+            last_block_timestamp = returned_block.timestamp
+            time_eligible = latest_block_timestamp_ - last_block_timestamp
+            total_time_eligible = total_time_eligible + int(time_eligible.total_seconds())
+            if total_time_eligible > min_time:
                 is_eligible = True
     total_contest_value = total_contest_value + contest_value_contribution
     # print(latest_block_number, latest_block_timestamp, total_contest_value, is_eligible)
@@ -269,7 +321,7 @@ def lp_contest_each_user(user: str, latest_block_number: int, latest_block_times
                 "timestamp": latest_block_timestamp,
                 "contest_value": Decimal128(total_contest_value),
                 "total_lp_value": Decimal128(last_lp_value_total),
-                "total_blocks_eligible": total_blocks_eligible,
+                "total_time_eligible": total_time_eligible,
                 "is_eligible": is_eligible
             }
         )
@@ -283,7 +335,7 @@ def lp_contest_each_user(user: str, latest_block_number: int, latest_block_times
                 "timestamp": latest_block_timestamp,
                 "contest_value": Decimal128(total_contest_value),
                 "total_lp_value": Decimal128(last_lp_value_total),
-                "total_blocks_eligible": total_blocks_eligible,
+                "total_time_eligible": total_time_eligible,
                 "is_eligible": is_eligible
             },
             upsert=True,

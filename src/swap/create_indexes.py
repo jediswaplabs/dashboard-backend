@@ -8,6 +8,8 @@ mongo = MongoClient(mongo_url)
 db_name = indexer_id.replace("-", "_")
 db = mongo[db_name]
 
+db["blocks"].create_index([("number", DESCENDING)])
+
 db["tokens"].create_index([("id", ASCENDING), ("_chain.valid_to", ASCENDING)])
 db["tokens"].create_index([("id", ASCENDING), ("_chain.valid_to", ASCENDING), ("_chain.valid_from", ASCENDING)])
 db["tokens"].create_index([("_chain.valid_to", ASCENDING)])
@@ -52,6 +54,8 @@ db["users"].create_index([("_chain.valid_to", ASCENDING)])
 db["users"].create_index([("_chain.valid_from", ASCENDING)])
 
 db["liquidity_positions"].create_index([("_chain.valid_to", ASCENDING)])
+db["liquidity_positions"].create_index([("_chain.valid_from", ASCENDING)])
+db["liquidity_positions"].create_index([("_chain.valid_to", ASCENDING), ("pair_address", ASCENDING), ("user", ASCENDING)])
 db["liquidity_positions"].create_index([("_chain.valid_to", ASCENDING), ("liquidity_token_balance", DESCENDING)])
 
 db["liquidity_position_snapshots"].create_index([("block", ASCENDING)])
@@ -77,6 +81,7 @@ db["mints"].create_index([("pair_id", ASCENDING), ("_chain.valid_to", ASCENDING)
 db["mints"].create_index([("pair_id", ASCENDING), ("transaction_hash", ASCENDING), ("_chain.valid_to", ASCENDING)])
 db["mints"].create_index([("pair_id", ASCENDING), ("to", ASCENDING), ("_chain.valid_to", ASCENDING)])
 db["mints"].create_index([("_chain.valid_to", ASCENDING)])
+db["mints"].create_index([("_chain.valid_from", ASCENDING)])
 
 db["burns"].create_index([("transaction_hash", ASCENDING), ("_chain.valid_to", ASCENDING)])
 db["burns"].create_index([("pair_id", ASCENDING), ("_chain.valid_to", ASCENDING)])

@@ -13,7 +13,7 @@ from swap.server.user import User, get_user
 
 db_name_for_contest = "lp_contest_main"
 contest_start_block = 41080
-contest_end_block = 150000
+contest_end_block = 200000
 
 
 @strawberry.type
@@ -24,7 +24,7 @@ class LPContest:
     timestamp: datetime
     contest_value: Decimal
     total_lp_value: Decimal
-    total_blocks_eligible: int
+    total_time_eligible: int
     is_eligible: bool
 
     @strawberry.field
@@ -37,9 +37,9 @@ class LPContest:
             user_id=data["user"],
             block=data["block"],
             timestamp=data["timestamp"],
-            contest_value=data["contest_value"],
+            contest_value=Decimal128(data["contest_value"].to_decimal() / 10000),
             total_lp_value=data["total_lp_value"],
-            total_blocks_eligible=data["total_blocks_eligible"],
+            total_time_eligible=data["total_time_eligible"],
             is_eligible=data["is_eligible"]
         )
 
