@@ -11,7 +11,7 @@ from strawberry.types import Info
 from swap.server.helpers import add_block_constraint, add_order_by_constraint
 from swap.server.user import User, get_user
 
-db_name_for_contest = "lp_contest_main"
+db_name_for_contest = "lp_contest_main_202305051846"
 contest_start_block = 41080
 contest_end_block = 200000
 

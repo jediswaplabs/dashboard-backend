@@ -86,7 +86,7 @@ def lp_contest_for_block(latest_block_number: int):
     users = [d for d in cursor]
     # print(len(users))
     for user in users:
-        lp_contest_each_user.apply_async(args=[user, latest_block_number, latest_block_timestamp], queue=f"{db_name_for_contest}_queue", expires=600)
+        lp_contest_each_user.apply_async(args=[user, latest_block_number, latest_block_timestamp], queue=f"{db_name_for_contest}_queue", expires=3600)
     set_in_redis(f"{db_name_for_contest}_last_block_done", latest_block_number)
 
 def update_pair_cumulative_price(pair_address: str, latest_block_number: int):
