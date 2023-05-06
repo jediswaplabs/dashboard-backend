@@ -7,7 +7,7 @@ from starknet_py.net.full_node_client import FullNodeClient
 
 @dataclass
 class IndexerContext:
-    block_hash: int
+    block_hash: str
     block_number: int
     block_timestamp: datetime
     eth_price: Decimal

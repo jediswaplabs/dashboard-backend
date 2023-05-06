@@ -2,25 +2,7 @@ from typing import NewType, Optional, TypeVar, Generic
 from pymongo import ASCENDING, DESCENDING
 from pymongo.cursor import CursorType
 
-from swap.indexer.helpers import felt
-
 import strawberry
-
-
-def parse_hex(value):
-    if not value.startswith("0x"):
-        raise ValueError("invalid Hex value")
-    return bytes.fromhex(value.replace("0x", ""))
-
-
-def serialize_hex(token_id):
-    return "0x" + token_id.hex()
-
-
-FieldElement = strawberry.scalar(
-    NewType("FieldElement", bytes), parse_value=parse_hex, serialize=serialize_hex
-)
-
 
 @strawberry.input
 class BlockFilter:

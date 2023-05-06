@@ -13,7 +13,7 @@ import sys
 logger = get_logger(__name__)
 
 
-indexer_id = "jediswap-testnet"
+indexer_id = "jediswap-mainnet-202305051846"
 
 
 def async_command(f):
@@ -30,15 +30,15 @@ def cli():
 
 
 @cli.command()
-# @click.option("--stream-url", default=None, help="stream url.")
+# @click.option("--server-url", default=None, help="server url.")
 # @click.option("--mongo-url", default=None, help="MongoDB url.")
 # @click.option("--rpc-url", default=None, help="StarkNet RPC url.")
 @click.option("--restart", is_flag=True, help="Restart indexing from the beginning.")
 @async_command
 async def indexer(restart):
-    stream_url = os.environ.get('STREAM_URL', None)
-    if stream_url is None:
-        sys.exit("STREAM_URL not set")
+    server_url = os.environ.get('SERVER_URL', None)
+    if server_url is None:
+        sys.exit("SERVER_URL not set")
     mongo_url = os.environ.get('MONGO_URL', None)
     if mongo_url is None:
         sys.exit("MONGO_URL not set")
@@ -47,12 +47,12 @@ async def indexer(restart):
         sys.exit("RPC_URL not set")
     logger.info(
         "starting indexer",
-        stream_url=stream_url,
+        server_url=server_url,
         # skip mongo_url: contains password
         rpc_url=rpc_url,
         restart=restart,
     )
-    await run_indexer(stream_url, mongo_url, rpc_url, indexer_id, restart)
+    await run_indexer(server_url, mongo_url, rpc_url, indexer_id, restart)
 
 
 @cli.command()

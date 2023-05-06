@@ -8,12 +8,12 @@ import strawberry
 from pymongo.database import Database
 from strawberry.types import Info
 
-from swap.server.helpers import FieldElement, felt, add_block_constraint, add_order_by_constraint
+from swap.server.helpers import add_block_constraint, add_order_by_constraint
 
 
 @strawberry.type
 class ExchangeDayData:
-    id: FieldElement
+    id: str
     day_id: int
     date: datetime
 
@@ -65,7 +65,7 @@ async def get_exchange_day_datas(
 
 @strawberry.type
 class PairDayData:
-    pair_id: FieldElement
+    pair_id: str
     day_id: int
     date: datetime
 
@@ -110,11 +110,11 @@ async def get_pair_day_datas(
     if where is not None:
         if where.pair is not None:
             pair_id = int(where.pair, 16)
-            query["pair_id"] = felt(pair_id)
+            query["pair_id"] = hex(pair_id)
         if where.pair_in:
             pair_in = []
             for pair in where.pair_in:
-                pair_in.append(felt(int(pair, 16)))
+                pair_in.append(hex(int(pair, 16)))
             query["pair_id"] = {"$in": pair_in}
         if where.date_lt is not None:
             date_lt = datetime.fromtimestamp(where.date_lt)
@@ -131,7 +131,7 @@ async def get_pair_day_datas(
 
 @strawberry.type
 class TokenDayData:
-    token_id: FieldElement
+    token_id: str
     day_id: int
     date: datetime
 
@@ -176,7 +176,7 @@ async def get_token_day_datas(
     if where is not None:
         if where.token is not None:
             token_id = int(where.token, 16)
-            query["token_id"] = felt(token_id)
+            query["token_id"] = hex(token_id)
         if where.date_lt is not None:
             date_lt = datetime.fromtimestamp(where.date_lt)
             query["date"] = {"$lt": date_lt}

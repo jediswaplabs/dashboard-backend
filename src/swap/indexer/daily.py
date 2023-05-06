@@ -1,24 +1,23 @@
 from datetime import datetime
 from typing import Union
 
-from apibara import Info
+from apibara.indexer import Info
 from bson import Decimal128
 
 from swap.indexer.context import IndexerContext
-from swap.indexer.helpers import felt
 
 from structlog import get_logger
 
 logger = get_logger(__name__)
 
 
-async def snapshot_pair_day_data(info: Info[IndexerContext], pair_address: int):
-    pair = await info.storage.find_one("pairs", {"id": felt(pair_address)})
+async def snapshot_pair_day_data(info: Info, pair_address: str):
+    pair = await info.storage.find_one("pairs", {"id": pair_address})
 
     day_id, day_start = _day_id(info)
 
     pair_day_data = await info.storage.find_one("pair_day_data", {
-            "pair_id": felt(pair_address),
+            "pair_id": pair_address,
             "day_id": day_id,
         })
 
@@ -26,12 +25,12 @@ async def snapshot_pair_day_data(info: Info[IndexerContext], pair_address: int):
         await info.storage.find_one_and_update(
             "pair_day_data",
             {
-                "pair_id": felt(pair_address),
+                "pair_id": pair_address,
                 "day_id": day_id,
             },
             {
                 "$set": {
-                    "pair_id": felt(pair_address),
+                    "pair_id": pair_address,
                     "day_id": day_id,
                     "date": day_start,
                     "token0_id": pair["token0_id"],
@@ -49,7 +48,7 @@ async def snapshot_pair_day_data(info: Info[IndexerContext], pair_address: int):
         await info.storage.insert_one(
             "pair_day_data",
             {
-                "pair_id": felt(pair_address),
+                "pair_id": pair_address,
                 "day_id": day_id,
                 "date": day_start,
                 "token0_id": pair["token0_id"],
@@ -64,26 +63,26 @@ async def snapshot_pair_day_data(info: Info[IndexerContext], pair_address: int):
         )
 
 
-async def update_pair_day_data(info: Info[IndexerContext], pair_address: int, update):
+async def update_pair_day_data(info: Info, pair_address: str, update):
     day_id, _day_start = _day_id(info)
 
     await info.storage.find_one_and_update(
         "pair_day_data",
         {
-            "pair_id": felt(pair_address),
+            "pair_id": pair_address,
             "day_id": day_id,
         },
         update,
     )
 
 
-async def snapshot_pair_hour_data(info: Info[IndexerContext], pair_address: int):
-    pair = await info.storage.find_one("pairs", {"id": felt(pair_address)})
+async def snapshot_pair_hour_data(info: Info, pair_address: str):
+    pair = await info.storage.find_one("pairs", {"id": pair_address})
 
     hour_id, hour_start = _hour_id(info)
 
     pair_hour_data = await info.storage.find_one("pair_hour_data", {
-            "pair_id": felt(pair_address),
+            "pair_id": pair_address,
             "hour_id": hour_id,
         })
 
@@ -91,12 +90,12 @@ async def snapshot_pair_hour_data(info: Info[IndexerContext], pair_address: int)
         await info.storage.find_one_and_update(
             "pair_hour_data",
             {
-                "pair_id": felt(pair_address),
+                "pair_id": pair_address,
                 "hour_id": hour_id,
             },
             {
                 "$set": {
-                    "pair_id": felt(pair_address),
+                    "pair_id": pair_address,
                     "hour_id": hour_id,
                     "date": hour_start,
                     "token0_id": pair["token0_id"],
@@ -114,7 +113,7 @@ async def snapshot_pair_hour_data(info: Info[IndexerContext], pair_address: int)
         await info.storage.insert_one(
             "pair_hour_data",
             {
-                "pair_id": felt(pair_address),
+                "pair_id": pair_address,
                 "hour_id": hour_id,
                 "date": hour_start,
                 "token0_id": pair["token0_id"],
@@ -129,26 +128,26 @@ async def snapshot_pair_hour_data(info: Info[IndexerContext], pair_address: int)
         )
 
 
-async def update_pair_hour_data(info: Info[IndexerContext], pair_address: int, update):
+async def update_pair_hour_data(info: Info, pair_address: str, update):
     hour_id, _hour_start = _hour_id(info)
 
     await info.storage.find_one_and_update(
         "pair_hour_data",
         {
-            "pair_id": felt(pair_address),
+            "pair_id": pair_address,
             "hour_id": hour_id,
         },
         update,
     )
 
 
-async def snapshot_exchange_day_data(info: Info[IndexerContext], address: int):
-    exchange = await info.storage.find_one("factories", {"id": felt(address)})
+async def snapshot_exchange_day_data(info: Info, address: int):
+    exchange = await info.storage.find_one("factories", {"id": hex(address)})
 
     day_id, day_start = _day_id(info)
 
     exchange_day_data = await info.storage.find_one("exchange_day_data", {
-            "address": felt(address),
+            "address": hex(address),
             "day_id": day_id,
         })
 
@@ -156,12 +155,12 @@ async def snapshot_exchange_day_data(info: Info[IndexerContext], address: int):
         await info.storage.find_one_and_update(
             "exchange_day_data",
             {
-                "address": felt(address),
+                "address": hex(address),
                 "day_id": day_id,
             },
             {
                 "$set": {
-                    "address": felt(address),
+                    "address": hex(address),
                     "day_id": day_id,
                     "date": day_start,
                     "total_volume_usd": exchange["total_volume_usd"],
@@ -176,7 +175,7 @@ async def snapshot_exchange_day_data(info: Info[IndexerContext], address: int):
         await info.storage.insert_one(
             "exchange_day_data",
             {
-                "address": felt(address),
+                "address": hex(address),
                 "day_id": day_id,
                 "date": day_start,
                 "total_volume_usd": exchange["total_volume_usd"],
@@ -188,13 +187,13 @@ async def snapshot_exchange_day_data(info: Info[IndexerContext], address: int):
         )
 
 
-async def update_exchange_day_data(info: Info[IndexerContext], address: int, update):
+async def update_exchange_day_data(info: Info, address: int, update):
     day_id, _day_start = _day_id(info)
 
     await info.storage.find_one_and_update(
         "exchange_day_data",
         {
-            "address": felt(address),
+            "address": hex(address),
             "day_id": day_id,
         },
         update,
@@ -202,10 +201,10 @@ async def update_exchange_day_data(info: Info[IndexerContext], address: int, upd
 
 
 async def snapshot_token_day_data(
-    info: Info[IndexerContext], token_address: Union[int, bytes]
+    info: Info, token_address: Union[int, bytes]
 ):
     if isinstance(token_address, int):
-        token_address = felt(token_address)
+        token_address = hex(token_address)
 
     day_id, day_start = _day_id(info)
 
@@ -256,10 +255,10 @@ async def snapshot_token_day_data(
 
 
 async def update_token_day_data(
-    info: Info[IndexerContext], token: Union[int, bytes], update
+    info: Info, token: Union[int, bytes], update
 ):
     if isinstance(token, int):
-        token = felt(token)
+        token = hex(token)
 
     day_id, _day_start = _day_id(info)
 
@@ -273,14 +272,14 @@ async def update_token_day_data(
     )
 
 
-def _day_id(info: Info[IndexerContext]):
+def _day_id(info: Info):
     ts = int(info.context.block_timestamp.timestamp())
     day_id = ts // 86400
     day_start = datetime.fromtimestamp(day_id * 86400)
     return day_id, day_start
 
 
-def _hour_id(info: Info[IndexerContext]):
+def _hour_id(info: Info):
     ts = int(info.context.block_timestamp.timestamp())
     hour_id = ts // 3600
     hour_start = datetime.fromtimestamp(hour_id * 3600)

@@ -21,8 +21,8 @@ services:
     - indexer
     - --mongo-url
     - "mongodb://apibara:apibara@mongo:27017"
-    - --stream-url
-    - "mainnet.starknet.stream.apibara.com"
+    - --server-url
+    - "mainnet.starknet.a5a.ch"
     - --rpc-url
     - "${STARKNET_RPC_URL}"
     environment:

@@ -8,13 +8,13 @@ import strawberry
 from pymongo.database import Database
 from strawberry.types import Info
 
-from swap.server.helpers import (FieldElement, felt, add_block_constraint, add_order_by_constraint, serialize_hex)
+from swap.server.helpers import (add_block_constraint, add_order_by_constraint)
 from swap.server.pair import Pair
 
 
 @strawberry.type
 class Transaction:
-    id: FieldElement
+    id: str
     timestamp: datetime
 
     @strawberry.field
@@ -36,21 +36,21 @@ class Transaction:
 
 @strawberry.type
 class Mint:
-    index: strawberry.Private[int]
-    pair_id: strawberry.Private[FieldElement]
+    pair_id: strawberry.Private[str]
 
-    transaction_hash: FieldElement
+    transaction_hash: str
     timestamp: datetime
-    sender: FieldElement
-    to: FieldElement
+    sender: str
+    to: str
     liquidity: Decimal
     amount0: Decimal
     amount1: Decimal
     amount_usd: Decimal = strawberry.field(name="amountUSD")
+    zap_in: bool
 
     @strawberry.field
     def id(self) -> str:
-        return f"{serialize_hex(self.transaction_hash)}-{self.index}"
+        return f"{self.transaction_hash}-mint"
 
     @strawberry.field
     def pair(self, info: Info) -> Pair:
@@ -61,26 +61,25 @@ class Mint:
         return cls(
             transaction_hash=data["transaction_hash"],
             timestamp=data["timestamp"],
-            index=data["index"],
             pair_id=data["pair_id"],
-            sender=data.get("sender", felt(0)),
+            sender=data.get("sender", hex(0)),
             to=data["to"],
             liquidity=data["liquidity"].to_decimal(),
             amount0=data["amount0"].to_decimal(),
             amount1=data["amount1"].to_decimal(),
             amount_usd=data["amount_usd"].to_decimal(),
+            zap_in=data.get("zap_in", False),
         )
 
 
 @strawberry.type
 class Burn:
-    index: strawberry.Private[int]
-    pair_id: strawberry.Private[FieldElement]
+    pair_id: strawberry.Private[str]
 
-    transaction_hash: FieldElement
+    transaction_hash: str
     timestamp: datetime
-    sender: FieldElement
-    to: FieldElement
+    sender: str
+    to: str
     liquidity: Decimal
     amount0: Decimal
     amount1: Decimal
@@ -88,7 +87,7 @@ class Burn:
 
     @strawberry.field
     def id(self) -> str:
-        return f"{serialize_hex(self.transaction_hash)}-{self.index}"
+        return f"{self.transaction_hash}-burn"
     
     @strawberry.field
     def pair(self, info: Info) -> Pair:
@@ -99,7 +98,6 @@ class Burn:
         return cls(
             transaction_hash=data["transaction_hash"],
             timestamp=data["timestamp"],
-            index=data["index"],
             pair_id=data["pair_id"],
             sender=data["sender"],
             to=data["to"],
@@ -112,14 +110,13 @@ class Burn:
 
 @strawberry.type
 class Swap:
-    index: strawberry.Private[int]
-    pair_id: strawberry.Private[FieldElement]
+    pair_id: strawberry.Private[str]
 
-    transaction_hash: FieldElement
+    transaction_hash: str
     timestamp: datetime
-    pair_id: FieldElement
-    sender: FieldElement
-    to: FieldElement
+    pair_id: str
+    sender: str
+    to: str
     amount0_in: Decimal
     amount0_out: Decimal
     amount1_in: Decimal
@@ -128,7 +125,7 @@ class Swap:
 
     @strawberry.field
     def id(self) -> str:
-        return f"{serialize_hex(self.transaction_hash)}-{self.index}"
+        return f"{self.transaction_hash}-swap"
 
     @strawberry.field
     def pair(self, info: Info) -> Pair:
@@ -139,7 +136,6 @@ class Swap:
         return cls(
             transaction_hash=data["transaction_hash"],
             timestamp=data["timestamp"],
-            index=data["log_index"],
             pair_id=data["pair_id"],
             sender=data["sender"],
             to=data["to"],
@@ -152,7 +148,7 @@ class Swap:
 
 @strawberry.input
 class WhereFilterForTransaction:
-    id: Optional[FieldElement] = None
+    id: Optional[str] = None
 
 async def get_transactions(
     info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc", where: Optional[WhereFilterForTransaction] = None
@@ -171,7 +167,7 @@ async def get_transactions(
     return [Transaction.from_mongo(d) for d in cursor]
 
 
-def get_transaction(info: Info, hash: FieldElement) -> Transaction:
+def get_transaction(info: Info, hash: str) -> Transaction:
     db: Database = info.context["db"]
 
     query = {"hash": hash}
@@ -226,16 +222,16 @@ async def get_swaps(
 
     if where is not None:
         if where.pair is not None:
-            pair_id = int(where.pair, 16)
-            query["pair_id"] = felt(pair_id)
+            pair_id = hex(int(where.pair, 16))
+            query["pair_id"] = pair_id
         if where.pair_in:
             pair_in = []
             for pair in where.pair_in:
-                pair_in.append(felt(int(pair, 16)))
+                pair_in.append(hex(int(pair, 16)))
             query["pair_id"] = {"$in": pair_in}
         if where.to is not None:
-            to = int(where.to, 16)
-            query["to"] = felt(to)
+            to = hex(int(where.to, 16))
+            query["to"] = to
 
     cursor = db["swaps"].find(query, limit=first, skip=skip)
     cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
@@ -251,16 +247,16 @@ async def get_mints(
 
     if where is not None:
         if where.pair is not None:
-            pair_id = int(where.pair, 16)
-            query["pair_id"] = felt(pair_id)
+            pair_id = hex(int(where.pair, 16))
+            query["pair_id"] = pair_id
         if where.pair_in:
             pair_in = []
             for pair in where.pair_in:
-                pair_in.append(felt(int(pair, 16)))
+                pair_in.append(hex(int(pair, 16)))
             query["pair_id"] = {"$in": pair_in}
         if where.to is not None:
-            to = int(where.to, 16)
-            query["to"] = felt(to)
+            to = hex(int(where.to, 16))
+            query["to"] = to
     
     cursor = db["mints"].find(query, limit=first, skip=skip)
     cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
@@ -282,16 +278,16 @@ async def get_burns(
 
     if where is not None:
         if where.pair is not None:
-            pair_id = int(where.pair, 16)
-            query["pair_id"] = felt(pair_id)
+            pair_id = hex(int(where.pair, 16))
+            query["pair_id"] = pair_id
         if where.pair_in:
             pair_in = []
             for pair in where.pair_in:
-                pair_in.append(felt(int(pair, 16)))
+                pair_in.append(hex(int(pair, 16)))
             query["pair_id"] = {"$in": pair_in}
         if where.sender is not None:
-            sender = int(where.sender, 16)
-            query["sender"] = felt(sender)
+            sender = hex(int(where.sender, 16))
+            query["sender"] = sender
 
     cursor = db["burns"].find(query, limit=first, skip=skip)
     cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
