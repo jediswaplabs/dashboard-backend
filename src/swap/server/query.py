@@ -16,7 +16,7 @@ from swap.server.transaction import Burn, get_burns
 from swap.server.aggregated import ExchangeDayData, get_exchange_day_datas
 from swap.server.aggregated import PairDayData, get_pair_day_datas
 from swap.server.aggregated import TokenDayData, get_token_day_datas
-from swap.server.lp_contest import LPContest, get_lp_contest, get_lp_contest_block, get_lp_contest_percentile, LPContestRanking
+from swap.server.lp_contest import LPContest, get_lp_contest, get_lp_contest_block, get_lp_contest_percentile, get_lp_contest_nft_rank, LPContestRanking, LPContestNFTRanks
 
 
 @strawberry.type
@@ -40,3 +40,4 @@ class Query:
     lp_contests: List[LPContest] = strawberry.field(resolver=get_lp_contest)
     lp_contest_blocks: List[LPContest] = strawberry.field(resolver=get_lp_contest_block)
     lp_contest_percentile: LPContestRanking = strawberry.field(resolver=get_lp_contest_percentile)
+    lp_contest_nft_rank: LPContestNFTRanks = strawberry.field(resolver=get_lp_contest_nft_rank)

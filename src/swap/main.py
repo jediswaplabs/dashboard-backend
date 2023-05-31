@@ -45,6 +45,9 @@ async def indexer(restart):
     rpc_url = os.environ.get('RPC_URL', None)
     if rpc_url is None:
         sys.exit("RPC_URL not set")
+    apibara_auth_token = os.environ.get('APIBARA_AUTH_TOKEN', None)
+    if apibara_auth_token is None:
+        sys.exit("APIBARA_AUTH_TOKEN not set")
     logger.info(
         "starting indexer",
         server_url=server_url,
@@ -52,7 +55,7 @@ async def indexer(restart):
         rpc_url=rpc_url,
         restart=restart,
     )
-    await run_indexer(server_url, mongo_url, rpc_url, indexer_id, restart)
+    await run_indexer(server_url, apibara_auth_token, mongo_url, rpc_url, indexer_id, restart)
 
 
 @cli.command()
