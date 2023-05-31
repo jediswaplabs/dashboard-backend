@@ -140,3 +140,66 @@ async def get_lp_contest_percentile(
         answer_dict["total_eligible"] = None
     return LPContestRanking.create_from_dict(answer_dict)
 
+
+@strawberry.type
+class LPContestNFTRanks:
+    
+    L1P1_start: Optional[int]
+    L1P1_end: Optional[int]
+    L1P2_start: Optional[int]
+    L1P2_end: Optional[int]
+    L1P3_start: Optional[int]
+    L1P3_end: Optional[int]
+    L1P4_start: Optional[int]
+    L1P4_end: Optional[int]
+    L1P5_start: Optional[int]
+    L1P5_end: Optional[int]
+
+    @classmethod
+    def create_from_dict(cls, data):
+        return cls(
+            L1P1_start=data["L1P1_start"],
+            L1P1_end=data["L1P1_end"],
+            L1P2_start=data["L1P2_start"],
+            L1P2_end=data["L1P2_end"],
+            L1P3_start=data["L1P3_start"],
+            L1P3_end=data["L1P3_end"],
+            L1P4_start=data["L1P4_start"],
+            L1P4_end=data["L1P4_end"],
+            L1P5_start=data["L1P5_start"],
+            L1P5_end=data["L1P5_end"]
+        )
+
+async def get_lp_contest_nft_rank(
+    info: Info) -> LPContestNFTRanks:
+    db: Database = info.context["db"]
+
+    query = dict()
+    query["is_eligible"] = True
+    
+    cursor = db[f"{db_name_for_contest}"].find(query)
+    total_eligible = len(list(cursor))
+    L1P1_start = 11
+    L1P1_end = int((2 * total_eligible) / 100)
+    L1P2_start = L1P1_end + 1
+    L1P2_end = int((10 * total_eligible) / 100)
+    L1P3_start = L1P2_end + 1
+    L1P3_end = int((25 * total_eligible) / 100)
+    L1P4_start = L1P3_end + 1
+    L1P4_end = int((55 * total_eligible) / 100)
+    L1P5_start = L1P4_end + 1
+    L1P5_end = total_eligible
+    answer_dict = dict(
+        L1P1_start = L1P1_start,
+        L1P1_end = L1P1_end,
+        L1P2_start = L1P2_start,
+        L1P2_end = L1P2_end,
+        L1P3_start = L1P3_start,
+        L1P3_end = L1P3_end,
+        L1P4_start = L1P4_start,
+        L1P4_end = L1P4_end,
+        L1P5_start = L1P5_start,
+        L1P5_end = L1P5_end
+    )
+    return LPContestNFTRanks.create_from_dict(answer_dict)
+

@@ -122,11 +122,12 @@ async def handle_events(indexer: JediSwapIndexer, info: Info, block: Block):
             logger.warn(f"Unhandled event {event.name}")
 
 
-async def run_indexer(server_url, mongodb_url, rpc_url, indexer_id, restart):
+async def run_indexer(server_url, apibara_auth_token, mongodb_url, rpc_url, indexer_id, restart):
     runner = IndexerRunner(
         config=IndexerRunnerConfiguration(
             stream_url=server_url,
             storage_url=mongodb_url,
+            token=apibara_auth_token,
         ),
         reset_state=restart,
     )
