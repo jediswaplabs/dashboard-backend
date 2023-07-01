@@ -87,8 +87,8 @@ def lp_contest_for_block(latest_block_number: int, user_offset: Optional[int] = 
     query = dict()
     query["block"] = {"$lte": latest_block_number}
     query["pair_address"] = {"$in": ELIGIBLE_PAIR_ADDRESSES}
-    cursor = db["liquidity_position_snapshots"].distinct("user", query)
-    users = [d for d in cursor][user_offset: user_offset + 10000]
+    cursor = db["liquidity_position_snapshots"].aggregate([{"$match": query}, {"$group": {"_id": "$user"}}, { "$sort": {"_id": 1}}, {"$skip": user_offset}, {"$limit": 10000}])
+    users = [d["_id"] for d in cursor]
     for user in users:
         lp_contest_each_user.apply_async(args=[user, latest_block_number, latest_block_timestamp], queue=f"{db_name_for_contest}_queue", expires=3600)
     if len(users) < 10000:
