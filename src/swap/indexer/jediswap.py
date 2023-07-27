@@ -39,7 +39,7 @@ _eth_usdc_address = hex(
     2177149292491018417715774000056994188369467207221503622945886811766623165290
 )
 
-_minimum_liquidity_threshold_eth = Decimal("0")
+_minimum_liquidity_threshold_eth = Decimal("1")
 
 
 async def get_eth_price(info: Info):

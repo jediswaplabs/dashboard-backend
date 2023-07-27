@@ -9,6 +9,8 @@ from starknet_py.net.client_models import Call
 
 from swap.indexer.context import IndexerContext
 
+from swap.indexer.jediswap import _eth
+
 
 def uint256(low, high):
     return low + (high << 128)
@@ -50,8 +52,11 @@ async def create_token(info: Info, address: int):
         # liquidity across pairs
         "total_liquidity": Decimal128("0"),
         # derived price (in eth)
-        "derived_eth": Decimal128("1"),
+        "derived_eth": Decimal128("0"),
     }
+
+    if token["id"] == hex(_eth): 
+        token["derived_eth"] = Decimal128("1")
 
     await info.storage.insert_one("tokens", token)
     return token

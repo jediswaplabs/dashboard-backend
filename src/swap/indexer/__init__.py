@@ -74,11 +74,11 @@ async def handle_block(info: Info, block_header: BlockHeader):
         "handle block", block = block
     )
     
-    from swap.tasks import lp_contest_for_block, contest_start_block, contest_end_block, db_name_for_contest
-    required_block = block["number"] - 1
-    if (required_block % 100) == 0:
-        if contest_start_block <= (block["number"] - 1) <= contest_end_block:
-            lp_contest_for_block.apply_async(args=[block["number"] - 1], queue=f"{db_name_for_contest}_queue", expires=300)
+    # from swap.tasks import lp_contest_for_block, contest_start_block, contest_end_block, db_name_for_contest
+    # required_block = block["number"] - 1
+    # if (required_block % 100) == 0:
+    #     if contest_start_block <= (block["number"] - 1) <= contest_end_block:
+    #         lp_contest_for_block.apply_async(args=[block["number"] - 1], queue=f"{db_name_for_contest}_queue", expires=300)
     await info.storage.insert_one("blocks", block)
 
 
@@ -130,6 +130,7 @@ async def run_indexer(server_url, apibara_auth_token, mongodb_url, rpc_url, inde
             token=apibara_auth_token,
         ),
         reset_state=restart,
+        timeout=300,
     )
 
     context = IndexerContext(
