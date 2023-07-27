@@ -11,9 +11,9 @@ from strawberry.types import Info
 from swap.server.helpers import add_block_constraint, add_order_by_constraint
 from swap.server.user import User, get_user
 
-db_name_for_contest = "lp_contest_main_202305221253"
+db_name_for_contest = "lp_contest_1_final"
 contest_start_block = 41080
-contest_end_block = 200000
+contest_end_block = 125200
 
 
 @strawberry.type
@@ -82,13 +82,15 @@ class LPContestRanking:
     rank: Optional[int]
     total_eligible: Optional[int] = strawberry.field(name="totalEligible")
     percentile_rank: Optional[int] = strawberry.field(name="percentileRank")
+    contest_value: Optional[Decimal] = strawberry.field(name="contestValue")
 
     @classmethod
     def create_from_dict(cls, data):
         return cls(
             rank=data["rank"],
             total_eligible=data["total_eligible"],
-            percentile_rank=data["percentile_rank"]
+            percentile_rank=data["percentile_rank"],
+            contest_value=data["contest_value"]
         )
 
 async def get_lp_contest_percentile(
@@ -134,10 +136,12 @@ async def get_lp_contest_percentile(
         answer_dict["percentile_rank"] = round(answer[0]["percentileRank"])
         answer_dict["rank"] = answer[0]["rank"]
         answer_dict["total_eligible"] = answer[0]["count"]
+        answer_dict["contest_value"] = Decimal128(user_contest_value.to_decimal() / 10000)
     else:
         answer_dict["percentile_rank"] = None
         answer_dict["rank"] = None
         answer_dict["total_eligible"] = None
+        answer_dict["contest_value"] = Decimal128(user_contest_value.to_decimal() / 10000)
     return LPContestRanking.create_from_dict(answer_dict)
 
 
