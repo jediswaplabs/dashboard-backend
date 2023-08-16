@@ -63,6 +63,21 @@ class WeekData:
             'score': self.score,
         }
 
+    @staticmethod
+    def get_nft_level(total_score: Decimal):
+        if total_score > 8000:
+            return 1
+        elif 6000 < total_score <= 7999:
+            return 2
+        elif 4000 < total_score <= 5999:
+            return 3
+        elif 2000 < total_score <= 3999:
+            return 4
+        elif 500 < total_score <= 1999:
+            return 5
+        else:
+            return 0
+
 
 @strawberry.type
 class Week:
@@ -80,6 +95,7 @@ class VolumeContest:
     weeks: List[Week]
     total_contest_score: Decimal
     total_contest_volume: Decimal
+    nft_level: int
 
     @strawberry.field
     def user(self, info: Info) -> User:
@@ -92,6 +108,7 @@ class VolumeContest:
             weeks=data["weeks"],
             total_contest_score=data["total_contest_score"],
             total_contest_volume=data["total_contest_volume"],
+            nft_level=data["nft_level"],
         )
 
 
@@ -143,4 +160,5 @@ async def get_volume_contest(
 
     data['total_contest_score'] = total_score
     data['total_contest_volume'] = total_volume
+    data['nft_level'] = WeekData.get_nft_level(total_score)
     return VolumeContest.from_mongo(data)
