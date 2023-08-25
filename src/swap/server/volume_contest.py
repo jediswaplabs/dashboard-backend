@@ -65,15 +65,15 @@ class WeekData:
 
     @staticmethod
     def get_nft_level(total_score: Decimal):
-        if total_score > 8000:
+        if total_score >= 8000:
             return 1
-        elif 6000 < total_score <= 7999:
+        elif 6000 <= total_score <= 7999:
             return 2
-        elif 4000 < total_score <= 5999:
+        elif 4000 <= total_score <= 5999:
             return 3
-        elif 2000 < total_score <= 3999:
+        elif 2000 <= total_score <= 3999:
             return 4
-        elif 500 < total_score <= 1999:
+        elif 500 <= total_score <= 1999:
             return 5
         else:
             return 0
