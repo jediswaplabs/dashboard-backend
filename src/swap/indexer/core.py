@@ -4,7 +4,6 @@ from apibara.indexer import Info
 from apibara.starknet import felt
 from apibara.starknet.proto.starknet_pb2 import BlockHeader, Event
 from bson import Decimal128
-from more_itertools import pairwise
 from structlog import get_logger
 
 from swap.indexer.abi import (burn_decoder, decode_event, mint_decoder,
