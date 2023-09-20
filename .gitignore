@@ -3,3 +3,4 @@ _docker
 .vscode
 .env
 .DS_Store
+.python-version
