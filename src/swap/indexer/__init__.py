@@ -10,6 +10,7 @@ from apibara.starknet import EventFilter, Filter, StarkNetIndexer, felt
 from apibara.starknet.cursor import starknet_cursor
 from apibara.starknet.proto.starknet_pb2 import Block, BlockHeader
 from starknet_py.net.full_node_client import FullNodeClient
+from starknet_py.net.client_errors import ClientError
 from starknet_py.net.models import StarknetChainId
 from structlog import get_logger
 
@@ -62,6 +63,22 @@ class JediSwapIndexer(StarkNetIndexer):
         await asyncio.sleep(10 * retry_count)
         return Reconnect(reconnect=retry_count < 5)
 
+async def check_block_in_rpc(info: Info):
+    logger.info(
+        "checking block in rpc", block_number=info.context.block_number, block_hash=info.context.block_hash
+        )
+    while True:
+        try:
+            await info.context.rpc.get_block(block_number=info.context.block_number)
+            break
+        except ClientError:
+            pass
+        except:
+            break    
+        logger.info(
+            "block not found in rpc", block_number=info.context.block_number, block_hash=info.context.block_hash
+            )
+
 async def handle_block(info: Info, block_header: BlockHeader):
     # Store the block information in the database.
     block = {
@@ -88,13 +105,15 @@ async def handle_events(indexer: JediSwapIndexer, info: Info, block: Block):
     info.context.block_number = block_header.block_number
     info.context.block_timestamp = block_header.timestamp.ToDatetime()
 
+    # await check_block_in_rpc(info)
+
     eth_price = await get_eth_price(info)
     if eth_price is None:
         eth_price = Decimal("0")
     info.context.eth_price = eth_price
 
     logger.info(
-        "handle events", block_number=block_header.block_number, block_timestamp=block_header.timestamp.ToDatetime()
+        "handle events", block_number=info.context.block_number, block_timestamp=info.context.block_timestamp
     )
 
     for event_with_tx in block.events:

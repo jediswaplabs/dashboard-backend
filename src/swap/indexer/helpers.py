@@ -6,10 +6,14 @@ from bson import Decimal128
 from starknet_py.cairo.felt import decode_shortstring
 from starknet_py.contract import ContractFunction
 from starknet_py.net.client_models import Call
+from starknet_py.net.client_errors import ClientError
 
 from swap.indexer.context import IndexerContext
 
 from swap.indexer.jediswap import _eth
+
+from structlog import get_logger
+logger = get_logger(__name__)
 
 
 def uint256(low, high):
@@ -209,6 +213,13 @@ async def simple_call(
 ):
     selector = ContractFunction.get_selector(method)
     call = Call(contract, selector, calldata)
-    return await info.context.rpc.call_contract(
-        call, block_hash=info.context.block_hash
-    )
+    while True:
+        try:
+            return await info.context.rpc.call_contract(call, block_hash=info.context.block_hash)
+        except ClientError:
+            pass
+        except:
+            break    
+        logger.info(
+            "block not found in rpc", block_number=info.context.block_number, block_hash=info.context.block_hash
+            )
