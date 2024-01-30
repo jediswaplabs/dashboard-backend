@@ -184,7 +184,10 @@ async def update_transaction_count(
 async def fetch_token_balance(
     info: Info, token_address: int, user: int
 ):
-    result = await simple_call(info, token_address, "balanceOf", [user])
+    try:
+        result = await simple_call(info, token_address, "balanceOf", [user])
+    except:
+        result = await simple_call(info, token_address, "balance_of", [user])
     return uint256(result[0], result[1])
 
 
@@ -204,7 +207,10 @@ async def fetch_token_decimals(info: Info, address: int):
 
 
 async def fetch_token_total_supply(info: Info, address: int):
-    result = await simple_call(info, address, "totalSupply", [])
+    try:
+        result = await simple_call(info, address, "totalSupply", [])
+    except:
+        result = await simple_call(info, address, "total_supply", [])
     return uint256(result[0], result[1])
 
 
@@ -213,13 +219,8 @@ async def simple_call(
 ):
     selector = ContractFunction.get_selector(method)
     call = Call(contract, selector, calldata)
-    while True:
-        try:
-            return await info.context.rpc.call_contract(call, block_hash=info.context.block_hash)
-        except ClientError:
-            pass
-        except:
-            break    
-        logger.info(
-            "block not found in rpc", block_number=info.context.block_number, block_hash=info.context.block_hash
-            )
+    try:
+        return await info.context.rpc.call_contract(call, block_number=info.context.block_number)
+    except Exception as e:
+        logger.info("rpc call did not succeed", error=str(e), contract=contract, method=method, calldata=calldata, block_number=info.context.block_number, block_hash=info.context.block_hash)  
+        raise

@@ -131,5 +131,28 @@ async def get_tracked_volume_usd(
     price0 = token0["derived_eth"].to_decimal() * info.context.eth_price
     price1 = token1["derived_eth"].to_decimal() * info.context.eth_price
 
-    # return average price
-    return (token0_amount * price0 + token1_amount * price1) / Decimal("2")
+    token0_whitelisted = False
+    token1_whitelisted = False
+    for whitelisted in _whitelist:
+        if hex(whitelisted) == token0["id"]:
+            token0_whitelisted = True
+        if hex(whitelisted) == token1["id"]:
+            token1_whitelisted = True
+
+    # take average of the two
+    if token0_whitelisted and token1_whitelisted:
+        return (token0_amount * price0 + token1_amount * price1) / Decimal("2")
+
+    # take twice the first
+    if token0_whitelisted:
+        return token0_amount * price0
+
+    # take twice the second
+    if token1_whitelisted:
+        return token1_amount * price1
+
+    # non-whitelisted asset
+    return Decimal("0")
+
+    # # return average price
+    # return (token0_amount * price0 + token1_amount * price1) / Decimal("2")
