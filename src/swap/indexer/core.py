@@ -6,8 +6,9 @@ from apibara.starknet.proto.starknet_pb2 import BlockHeader, Event
 from bson import Decimal128
 from structlog import get_logger
 
-from swap.indexer.abi import (burn_decoder, decode_event, mint_decoder,
-                                 swap_decoder, sync_decoder, transfer_decoder)
+# from swap.indexer.abi import (burn_decoder, decode_event, mint_decoder,
+#                                  swap_decoder, sync_decoder, transfer_decoder)
+from swap.indexer.abi import decode_event
 from swap.indexer.context import IndexerContext
 from swap.indexer.daily import (snapshot_exchange_day_data,
                                    snapshot_pair_day_data,
@@ -29,7 +30,7 @@ logger = get_logger(__name__)
 
 
 async def handle_transfer(info: Info, event: Event, transaction_hash: str):
-    transfer = decode_event(transfer_decoder, event.data)
+    transfer = decode_event('Transfer', event.data)
     pair_address_int = felt.to_int(event.from_address)
     pair_address = hex(pair_address_int)
     logger.info("handle Transfer", **transfer._asdict())
@@ -208,7 +209,7 @@ async def handle_transfer(info: Info, event: Event, transaction_hash: str):
 
 
 async def handle_sync(info: Info, event: Event, transaction_hash: str):
-    sync = decode_event(sync_decoder, event.data)
+    sync = decode_event('Sync', event.data)
     pair_address = hex(felt.to_int(event.from_address))
     logger.info("handle Sync", **sync._asdict())
 
@@ -330,7 +331,7 @@ async def handle_sync(info: Info, event: Event, transaction_hash: str):
 
 
 async def handle_mint(info: Info, event: Event, transaction_hash: str):
-    mint = decode_event(mint_decoder, event.data)
+    mint = decode_event('Mint', event.data)
     pair_address = hex(felt.to_int(event.from_address))
     logger.info("handle Mint", **mint._asdict())
 
@@ -427,7 +428,7 @@ async def handle_mint(info: Info, event: Event, transaction_hash: str):
 
 
 async def handle_burn(info: Info, event: Event, transaction_hash: str):
-    burn = decode_event(burn_decoder, event.data)
+    burn = decode_event('Burn', event.data)
     pair_address = hex(felt.to_int(event.from_address))
     logger.info("handle Burn", **burn._asdict())
 
@@ -525,7 +526,7 @@ async def handle_burn(info: Info, event: Event, transaction_hash: str):
 
 
 async def handle_swap(info: Info, event: Event, transaction_hash: str):
-    swap = decode_event(swap_decoder, event.data)
+    swap = decode_event('Swap', event.data)
     pair_address = hex(felt.to_int(event.from_address))
     logger.info("handle Swap", **swap._asdict())
 

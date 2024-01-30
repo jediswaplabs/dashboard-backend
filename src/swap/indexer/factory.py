@@ -7,7 +7,7 @@ from apibara.starknet.proto.starknet_pb2 import BlockHeader, Event
 from bson import Decimal128
 from structlog import get_logger
 
-from swap.indexer.abi import decode_event, pair_created_decoder
+from swap.indexer.abi import decode_event
 from swap.indexer.helpers import create_token
 
 logger = get_logger(__name__)
@@ -20,7 +20,7 @@ BURN_KEY = felt.from_hex("0x243e1de00e8a6bc1dfa3e950e6ade24c52e4a25de4dee7fb5aff
 
 
 async def handle_pair_created(indexer, info: Info, header: BlockHeader, event: Event):
-    pair_created = decode_event(pair_created_decoder, event.data)
+    pair_created = decode_event('PairCreated', event.data)
     factory_address = hex(felt.to_int(event.from_address))
     logger.info("handle PairCreated", **pair_created._asdict())
 
