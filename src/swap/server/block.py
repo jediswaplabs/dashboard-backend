@@ -46,10 +46,10 @@ async def get_blocks(
             block_id = int(where.id, 16)
             query["hash"] = hex(block_id)
         if where.timestamp_lt is not None:
-            timestamp_lt = datetime.fromtimestamp(where.timestamp_lt)
+            timestamp_lt = datetime.utcfromtimestamp(where.timestamp_lt)
             query["timestamp"] = {"$lt": timestamp_lt}
         if where.timestamp_gt is not None:
-            timestamp_gt = datetime.fromtimestamp(where.timestamp_gt)
+            timestamp_gt = datetime.utcfromtimestamp(where.timestamp_gt)
             query["timestamp"] = {**query.get("timestamp", dict()), **{"$gt": timestamp_gt}}
 
     cursor = db["blocks"].find(query, skip=skip, limit=first)
