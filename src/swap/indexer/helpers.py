@@ -195,7 +195,10 @@ async def fetch_token_name(info: Info, address: int):
     try:
         result = await simple_call(info, address, "name", [])
     except:
-        result = await simple_call(info, address, "get_name", [])
+        try:
+            result = await simple_call(info, address, "get_name", [])
+        except:
+            return 'NonToken'
     return decode_shortstring(result[0]).strip("\x00")
 
 
@@ -203,7 +206,10 @@ async def fetch_token_symbol(info: Info, address: int):
     try:
         result = await simple_call(info, address, "symbol", [])
     except:
-        result = await simple_call(info, address, "get_symbol", [])
+        try:
+            result = await simple_call(info, address, "get_symbol", [])
+        except:
+            return 'NONT'
     return decode_shortstring(result[0]).strip("\x00")
 
 
@@ -211,7 +217,10 @@ async def fetch_token_decimals(info: Info, address: int):
     try:
         result = await simple_call(info, address, "decimals", [])
     except:
-        result = await simple_call(info, address, "get_decimals", [])
+        try:
+            result = await simple_call(info, address, "get_decimals", [])
+        except:
+            return 0
     return result[0]
 
 
@@ -222,7 +231,10 @@ async def fetch_token_total_supply(info: Info, address: int):
         try:
             result = await simple_call(info, address, "total_supply", [])
         except:
-            result = await simple_call(info, address, "get_total_supply", []) 
+            try:
+                result = await simple_call(info, address, "get_total_supply", []) 
+            except:
+                return 0
     try:
         return uint256(result[0], result[1])
     except:
