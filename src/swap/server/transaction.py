@@ -250,6 +250,8 @@ class WhereFilterForMint:
     pair: Optional[str] = None
     pair_in: Optional[List[str]] = field(default_factory=list)
     to: Optional[str] = None
+    timestamp_lte: Optional[int] = None
+    timestamp_gte: Optional[int] = None
 
 async def get_mints(
     info: Info, first: Optional[int] = 100, skip: Optional[int] = 0, orderBy: Optional[str] = None, orderByDirection: Optional[str] = "asc", where: Optional[WhereFilterForMint] = None
@@ -271,6 +273,12 @@ async def get_mints(
         if where.to is not None:
             to = hex(int(where.to, 16))
             query["to"] = to
+        if where.timestamp_lte is not None:
+            timestamp_lte = datetime.utcfromtimestamp(where.timestamp_lte)
+            query["timestamp"] = {"$lte": timestamp_lte}
+        if where.timestamp_gte is not None:
+            timestamp_gte = datetime.utcfromtimestamp(where.timestamp_gte)
+            query["timestamp"] = {**query.get("timestamp", dict()), **{"$gte": timestamp_gte}}
     
     cursor = db["mints"].find(query, limit=first, skip=skip)
     cursor = add_order_by_constraint(cursor, orderBy, orderByDirection)
